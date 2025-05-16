@@ -64,16 +64,16 @@ public class Server implements Runnable {
         }
 
 
-        clients.forEach(client -> {
+        new ArrayList<>(clients).forEach(client -> {
             client.stop();
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            this.removeClient(client);
-            }
-        );
+            this.removeClient(client); // OK ici car tu ne modifies pas la liste source de la boucle
+        });
+
 
 
         this.shutdown();
