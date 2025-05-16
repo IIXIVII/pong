@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 package Game;
-=======
-package src.Game;
->>>>>>> 4afd6c18e3d05ff972a1cc7ccd0a20f449fba538
 
 import java.io.BufferedReader;
 import java.io.IOException;
