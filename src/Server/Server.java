@@ -12,21 +12,27 @@ import java.util.List;
 
 
 public class Server implements Runnable {
-    private final Integer port = 8085;
+    private Integer port = 8085;
     private ServerSocket serverSocket;
     private List<ClientHandler> clients = new ArrayList<>();
+    private boolean running = false;
+
+    public void Server(Integer port) {
+        this.port = port;
+    }
 
     @Override
     public void run() {
         Logger.log("Serveur démarre !", Logger.LogType.DEBUG,"SERVER");
+        this.running = true;
 
         this.initServer();
         // Boucle d'écoute ou autre traitement serveur
-        while (true) {
+        while (clients.size() != 2 && this.running) {
 
             Socket clientSocket = null; // Attend un client
             try {
-                Logger.log("En attente d'un client...", Logger.LogType.INFO,"sever"); // INFO
+                Logger.log("En attente d'un client...", Logger.LogType.INFO,"server"); // INFO
                 clientSocket = serverSocket.accept();
                 Logger.log("Nouveau client : " + clientSocket.getInetAddress(), Logger.LogType.SUCCESS,"server");
 
@@ -40,9 +46,22 @@ public class Server implements Runnable {
                 throw new RuntimeException(e);
             }
 
-
-
         }
+
+        while (this.running){
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+
+        clients.forEach(client -> this.removeClient(client));
+
+
+        this.shutdown();
+        Logger.log("Serveur est eteind", Logger.LogType.SUCCESS,"SERVER");
     }
 
 
@@ -56,11 +75,29 @@ public class Server implements Runnable {
         }
     }
 
+    public void shutdown() {
+        running = false;
+        Logger.log("Arrêt du serveur demandé...", Logger.LogType.WARNING,"server");
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close(); // Débloque le .accept()
+                Logger.log("Socket fermé", Logger.LogType.SUCCESS,"SERVER");
+            }
+        } catch (IOException e) {
+            Logger.log("Erreur lors de la fermeture du serveur : " + e.getMessage(), Logger.LogType.ERROR,"server");
+        }
+    }
+
+
     public void removeClient(ClientHandler removeclient) {
+
         this.clients.remove(removeclient);
         Logger.log("Client retiré : " + removeclient, Logger.LogType.WARNING,"server");
     }
 
+    public ClientHandler getClient(int index){
+        return this.clients.get(index);
+    }
 
 }
 

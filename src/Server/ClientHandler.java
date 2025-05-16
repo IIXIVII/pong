@@ -8,7 +8,8 @@ import java.net.Socket;
 import tool.*;
 
 public class ClientHandler implements Runnable {
-
+    static int nb_client = 0;
+    private int id;
     private Socket clientSocket;
     private PrintWriter out;
     private BufferedReader in;
@@ -23,10 +24,13 @@ public class ClientHandler implements Runnable {
             out = new PrintWriter(clientSocket.getOutputStream(), true);
 
             out.println("[SERVEUR]Bienvenue !");
-            Logger.log("Client connecté : " + clientSocket.getInetAddress(), Logger.LogType.SUCCESS,"server");
+            Logger.log("Client connecté : " + clientSocket.getInetAddress() + " numero " + ClientHandler.nb_client, Logger.LogType.SUCCESS,"server");
         } catch (IOException e) {
             Logger.log("Erreur avec le client : " + e.getMessage(), Logger.LogType.ERROR,"server");
         }
+
+        this.id = ClientHandler.nb_client;
+        ClientHandler.nb_client++;
     }
 
     public void sendData(String message) {
@@ -41,6 +45,12 @@ public class ClientHandler implements Runnable {
             String message;
             while ((message = in.readLine()) != null) {
                 Logger.log("Message du client : " + message, Logger.LogType.INFO,"server");
+                server.getClient(1).sendData(message);
+
+                if (message.equals("shutdown")){
+                    server.shutdown();
+                }
+
 
                 if (message.equalsIgnoreCase("bye")) {
                     break;
