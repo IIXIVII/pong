@@ -1,14 +1,10 @@
 
 
-<<<<<<< HEAD
 import Game.Client;
 import Server.Server;
 
 import java.util.Scanner;
-=======
-import src.Game.Client;
-import src.Server.Server;
->>>>>>> 4afd6c18e3d05ff972a1cc7ccd0a20f449fba538
+
 
 public class GameApp {
 
@@ -20,20 +16,13 @@ public class GameApp {
         Thread serveurThread = new Thread(new Server());
         serveurThread.start();
 
-<<<<<<< HEAD
-=======
 
 
-        Thread clientlocal = new Thread(new Client("localhost"));
-        clientlocal.start();
->>>>>>> 4afd6c18e3d05ff972a1cc7ccd0a20f449fba538
         try {
             Thread.sleep(1000); // évite de boucler à vide
         } catch (InterruptedException e) {
 
         }
-
-<<<<<<< HEAD
         Client clientlocal = new Client("localhost");
 
 
@@ -64,18 +53,6 @@ public class GameApp {
         } while (v != 2);
         clientlocal.send("shutdown");
 
-=======
-        Thread clientlocal2 = new Thread(new Client("localhost"));
-        clientlocal2.start();
 
-        // Bloque le main thread
-        while (true) {
-            try {
-                Thread.sleep(1000); // évite de boucler à vide
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
->>>>>>> 4afd6c18e3d05ff972a1cc7ccd0a20f449fba538
     }
 }

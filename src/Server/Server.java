@@ -17,6 +17,7 @@ public class Server implements Runnable {
     private Integer port = 8085;
     private ServerSocket serverSocket;
     private List<ClientHandler> clients = new ArrayList<>();
+    //private ArrayList<Thread> threadClients = new ArrayList<>();
     private boolean running = false;
 
     public void Server(Integer port) {
@@ -42,6 +43,8 @@ public class Server implements Runnable {
                 ClientHandler handler = new ClientHandler(clientSocket, this);
                 clients.add(handler);
 
+//                threadClients.add(new Thread(handler));
+//                threadClients.getLast().start();
                 new Thread(handler).start();
 
             } catch (IOException e) {
@@ -61,7 +64,16 @@ public class Server implements Runnable {
         }
 
 
-        clients.forEach(client -> this.removeClient(client));
+        clients.forEach(client -> {
+            client.stop();
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            this.removeClient(client);
+            }
+        );
 
 
         this.shutdown();

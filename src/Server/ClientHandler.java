@@ -18,9 +18,12 @@ public class ClientHandler implements Runnable {
     private BufferedReader in;
     private Server server;
 
+    private boolean running = false;
+
     public ClientHandler(Socket socket, Server server) throws IOException {
         this.clientSocket = socket;
         this.server = server;
+
 
         try {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -28,9 +31,9 @@ public class ClientHandler implements Runnable {
 
             out.println("[SERVEUR]Bienvenue !");
 
-            Logger.log("Client connecté : " + clientSocket.getInetAddress() + " numero " + ClientHandler.nb_client, Logger.LogType.SUCCESS,"server");
+            Logger.log("Client connecté : " + clientSocket.getInetAddress() + " numero " + ClientHandler.nb_client, Logger.LogType.SUCCESS,"server - handler");
         } catch (IOException e) {
-            Logger.log("Erreur avec le client : " + e.getMessage(), Logger.LogType.ERROR,"server");
+            Logger.log("Erreur avec le client : " + e.getMessage(), Logger.LogType.ERROR,"server - handler");
         }
 
         this.id = ClientHandler.nb_client;
@@ -46,10 +49,11 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
+        this.running = true;
         try {
             String message;
-            while ((message = in.readLine()) != null) {
-                Logger.log("Message du client : " + message, Logger.LogType.INFO,"server");
+            while (this.running && (message = in.readLine()) != null) {
+                Logger.log("Message du client : " + message, Logger.LogType.INFO,"server - handler");
                 server.getClient(1).sendData(message);
 
                 if (message.equals("shutdown")){
@@ -64,14 +68,23 @@ public class ClientHandler implements Runnable {
 
         } catch (IOException e) {
 
-            Logger.log("Erreur lors de la fermeture du socket client : " + e.getMessage(), Logger.LogType.ERROR,"server");
+            Logger.log("Erreur lors de la fermeture du socket client : " + e.getMessage(), Logger.LogType.ERROR,"server - handler");
         } finally {
             try {
                 clientSocket.close();
+                Logger.log("Socket client fermé", Logger.LogType.SUCCESS,"server - handler");
             } catch (IOException ignored) {}
 
-            server.removeClient(this);
 
         }
+    }
+
+
+    public int getId(){
+        return this.id;
+    }
+
+    public void stop(){
+        this.running = false;
     }
 }
