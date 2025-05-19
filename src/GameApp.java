@@ -1,6 +1,6 @@
 
 
-import Common.messages.*;
+import Common.Messages.*;
 import Game.Client;
 import Server.Server;
 

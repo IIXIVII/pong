@@ -1,8 +1,8 @@
-package Common.messages;
+package Common.Messages;
 
 import org.json.JSONObject;
 import org.json.JSONException;
-import Common.Logger; // Assure-toi que ta classe Logger est accessible
+import Common.Tools.Logger; // Assure-toi que ta classe Logger est accessible
 
 public abstract class GameMessage {
     public static boolean debug = false; // Pour activer/désactiver les logs de message

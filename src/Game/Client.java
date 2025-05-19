@@ -2,10 +2,10 @@ package Game;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import Common.Logger;
-import Common.messages.ConnectMessage;
-import Common.messages.GameMessage;
-import Common.messages.ShutdownMessage;
+import Common.Tools.Logger;
+import Common.Messages.ConnectMessage;
+import Common.Messages.GameMessage;
+import Common.Messages.ShutdownMessage;
 
 import java.io.BufferedReader;
 import java.io.IOException;

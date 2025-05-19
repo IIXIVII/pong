@@ -6,8 +6,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import Common.*;
-import Common.messages.*;
+import Common.Tools.Logger;
+import Common.Messages.*;
 
 public class ClientHandler implements Runnable {
     static int nb_client = 0;
