@@ -1,9 +1,8 @@
 
 
-import Common.messages.ShutdownMessage;
+import Common.messages.*;
 import Game.Client;
 import Server.Server;
-import Common.messages.GameMessage;
 
 import java.util.Scanner;
 

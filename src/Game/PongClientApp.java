@@ -2,7 +2,7 @@ package Game;
 
 import Common.GameStateDto;
 import Game.Ui.*;
-import Game.Ui.Style.UiStyle;
+import Game.Ui.Style.*;
 
 import javax.swing.*;
 import java.awt.*;
