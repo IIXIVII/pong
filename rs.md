@@ -10,3 +10,4 @@
 | updategame | {"cmd":"udpategame","data":"..."      | serveur -> client                     | donne l'etat du jeux                     |
 | endgame    | {"cmd":"endgame, "data":"gamestatus"} | serveur -> client                     | serveur valide la victoire               |
 | quit       | {"cmd":"quit"}                        | client -> serveur                     | client se deconnect du server            |
+

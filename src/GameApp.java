@@ -1,7 +1,9 @@
 
 
+import Common.messages.ShutdownMessage;
 import Game.Client;
 import Server.Server;
+import Common.messages.GameMessage;
 
 import java.util.Scanner;
 
@@ -13,17 +15,16 @@ public class GameApp {
     public static void main(String[] args) {
 
         // Lancer le serveur dans un thread
-        Thread serveurThread = new Thread(new Server());
+        Thread serveurThread = new Thread(new Server(8085,"lol"));
         serveurThread.start();
 
-
-
+        GameMessage.debug = true;
         try {
             Thread.sleep(1000); // évite de boucler à vide
         } catch (InterruptedException e) {
 
         }
-        Client clientlocal = new Client("localhost");
+        Client clientlocal = new Client("localhost",8085, "lol");
 
 
 
@@ -45,14 +46,15 @@ public class GameApp {
         do {
             System.out.println("Appuie uniquement sur Entrée pour continuer...");
             input = scanner.nextLine();
-            clientlocal.send("lol" + input);
+
             v++;
 
 
 
-        } while (v != 2);
-        clientlocal.send("shutdown");
 
+        } while (v != 2);
+
+        clientlocal.send(new ShutdownMessage(clientlocal.getId(), "arret du server demandé"));
 
     }
 }

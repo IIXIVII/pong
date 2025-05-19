@@ -6,11 +6,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import tool.*;
+
+import Common.*;
+import Common.messages.*;
 
 public class ClientHandler implements Runnable {
     static int nb_client = 0;
     private int id;
+    public boolean admin = false;
 
 
     private Socket clientSocket;
@@ -26,10 +29,10 @@ public class ClientHandler implements Runnable {
 
 
         try {
+
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             out = new PrintWriter(clientSocket.getOutputStream(), true);
 
-            out.println("[SERVEUR]Bienvenue !");
 
             Logger.log("Client connecté : " + clientSocket.getInetAddress() + " numero " + ClientHandler.nb_client, Logger.LogType.SUCCESS,"server - handler");
         } catch (IOException e) {
@@ -39,11 +42,15 @@ public class ClientHandler implements Runnable {
         this.id = ClientHandler.nb_client;
         ClientHandler.nb_client++;
 
+        String message = in.readLine();
+        server.processClientMessage(this,message);
+
+
     }
 
-    public void sendData(String message) {
+    public void sendMessage(GameMessage message) {
         if (out != null) {
-            out.println(message);
+            out.println(message.toJSONObject());
         }
     }
 
@@ -53,17 +60,10 @@ public class ClientHandler implements Runnable {
         try {
             String message;
             while (this.running && (message = in.readLine()) != null) {
-                Logger.log("Message du client : " + message, Logger.LogType.INFO,"server - handler");
-                server.getClient(1).sendData(message);
 
-                if (message.equals("shutdown")){
-                    server.shutdown();
-                }
+                server.processClientMessage(this,message);
 
 
-                if (message.equalsIgnoreCase("bye")) {
-                    break;
-                }
             }
 
         } catch (IOException e) {
@@ -83,8 +83,12 @@ public class ClientHandler implements Runnable {
     public int getId(){
         return this.id;
     }
+    public boolean isAdmin(){return this.admin;}
+
 
     public void stop(){
         this.running = false;
     }
+
+
 }
