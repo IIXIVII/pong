@@ -1,6 +1,6 @@
 package Game.Ui;
 import Game.PongClientApp;
-import Game.Ui.Style.UiStyle;
+import Game.Ui.Style.*;
 
 import javax.swing.*;
 import java.awt.*;

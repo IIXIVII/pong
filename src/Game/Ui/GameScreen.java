@@ -1,14 +1,14 @@
 package Game.Ui;
 
 import Game.PongClientApp;
-import Game.Ui.Style.UiStyle;
+import Game.Ui.Style.*;
 
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Ellipse2D;
 
-import static Game.Ui.Style.UiStyle.*;
+
 
 public class GameScreen extends BaseScreen {
 
@@ -53,22 +53,22 @@ public class GameScreen extends BaseScreen {
         // Ligne centrale pleine
         Stroke oldStroke = g2d.getStroke();
         g2d.setStroke(new BasicStroke(2f));
-        g2d.drawLine(WINDOW_DIMENSION.width/2, 0, WINDOW_DIMENSION.width/2, WINDOW_DIMENSION.height);
+        g2d.drawLine(UiStyle.WINDOW_DIMENSION.width/2, 0, UiStyle.WINDOW_DIMENSION.width/2, UiStyle.WINDOW_DIMENSION.height);
         g2d.setStroke(oldStroke);
 
         // Lignes en pointillés indiquant les limites
         Stroke dashed = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{8, 8}, 0);
         g2d.setStroke(dashed);
         int goalLineOffset = 10;
-        g2d.drawLine(goalLineOffset, 0, goalLineOffset, WINDOW_DIMENSION.height);
-        g2d.drawLine(WINDOW_DIMENSION.width - goalLineOffset, 0, WINDOW_DIMENSION.width - goalLineOffset, WINDOW_DIMENSION.height);
+        g2d.drawLine(goalLineOffset, 0, goalLineOffset, UiStyle.WINDOW_DIMENSION.height);
+        g2d.drawLine(UiStyle.WINDOW_DIMENSION.width - goalLineOffset, 0, UiStyle.WINDOW_DIMENSION.width - goalLineOffset, UiStyle.WINDOW_DIMENSION.height);
         g2d.setStroke(new BasicStroke()); // Reset stroke
 
         // Cercle d'indication du départ de la balle
         int centerCircleDiameter = 40;
         Shape centerCircle = new Ellipse2D.Double(
-                (double) WINDOW_DIMENSION.width / 2 - (double) centerCircleDiameter / 2,
-                (double) WINDOW_DIMENSION.height / 2 - (double) centerCircleDiameter / 2,
+                (double) UiStyle.WINDOW_DIMENSION.width / 2 - (double) centerCircleDiameter / 2,
+                (double) UiStyle.WINDOW_DIMENSION.height / 2 - (double) centerCircleDiameter / 2,
                 centerCircleDiameter, centerCircleDiameter
         );
 
@@ -77,9 +77,9 @@ public class GameScreen extends BaseScreen {
 
         int paddleOffset = 50;
         // Raquette Joueur 1
-        g2d.fillRect(paddleOffset, currentLocalState.player1Y, PADDLE_WIDTH, PADDLE_HEIGHT);
+        g2d.fillRect(paddleOffset, currentLocalState.player1Y, UiStyle.PADDLE_WIDTH, UiStyle.PADDLE_HEIGHT);
         // Raquette Joueur 2
-        g2d.fillRect(WINDOW_DIMENSION.width - paddleOffset - PADDLE_WIDTH, currentLocalState.player2Y, PADDLE_WIDTH, PADDLE_HEIGHT);
+        g2d.fillRect(UiStyle.WINDOW_DIMENSION.width - paddleOffset - UiStyle.PADDLE_WIDTH, currentLocalState.player2Y, UiStyle.PADDLE_WIDTH, UiStyle.PADDLE_HEIGHT);
 
         // Balle(s)
         // TODO
@@ -92,7 +92,7 @@ public class GameScreen extends BaseScreen {
         g2d.setFont(scoreFont);
         g2d.setColor(UiStyle.DEFAULT_COLOR);
         FontMetrics fmScore = g2d.getFontMetrics(scoreFont);
-        g2d.drawString(String.valueOf(currentLocalState.scorePlayer1), WINDOW_DIMENSION.width / 4 - fmScore.stringWidth(String.valueOf(currentLocalState.scorePlayer1)) / 2, 60);
-        g2d.drawString(String.valueOf(currentLocalState.scorePlayer2), WINDOW_DIMENSION.width * 3 / 4 - fmScore.stringWidth(String.valueOf(currentLocalState.scorePlayer2)) / 2, 60);
+        g2d.drawString(String.valueOf(currentLocalState.scorePlayer1), UiStyle.WINDOW_DIMENSION.width / 4 - fmScore.stringWidth(String.valueOf(currentLocalState.scorePlayer1)) / 2, 60);
+        g2d.drawString(String.valueOf(currentLocalState.scorePlayer2), UiStyle.WINDOW_DIMENSION.width * 3 / 4 - fmScore.stringWidth(String.valueOf(currentLocalState.scorePlayer2)) / 2, 60);
     }
 }

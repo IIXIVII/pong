@@ -1,7 +1,7 @@
 package Game.Ui;
 
 import Common.GameStateDto;
-import Game.Ui.Style.UiStyle;
+import Game.Ui.Style.*;
 import Game.PongClientApp;
 import javax.swing.*;
 import java.awt.*;

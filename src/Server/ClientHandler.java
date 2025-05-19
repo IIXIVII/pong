@@ -6,62 +6,88 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class ClientHandler  implements Runnable{
+import Common.*;
+import Common.messages.*;
+
+public class ClientHandler implements Runnable {
+    static int nb_client = 0;
+    private int id;
+    public boolean admin = false;
+
 
     private Socket clientSocket;
     private PrintWriter out;
     private BufferedReader in;
     private Server server;
 
+    private boolean running = false;
+
     public ClientHandler(Socket socket, Server server) throws IOException {
         this.clientSocket = socket;
         this.server = server;
 
-        // Préparation des flux
+
         try {
+
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             out = new PrintWriter(clientSocket.getOutputStream(), true);
 
-            out.println("[SERVEUR]Bienvenue !");
-            server.log("Client connecté : " + clientSocket.getInetAddress(), 1); // SUCCESS
+
+            Logger.log("Client connecté : " + clientSocket.getInetAddress() + " numero " + ClientHandler.nb_client, Logger.LogType.SUCCESS,"server - handler");
         } catch (IOException e) {
-            server.log("Erreur avec le client : " + e.getMessage(), 4); // ERROR
+            Logger.log("Erreur avec le client : " + e.getMessage(), Logger.LogType.ERROR,"server - handler");
         }
+
+        this.id = ClientHandler.nb_client;
+        ClientHandler.nb_client++;
+
+        String message = in.readLine();
+        server.processClientMessage(this,message);
+
 
     }
 
-    public void sendData(String message) {
+    public void sendMessage(GameMessage message) {
         if (out != null) {
-            out.println(message);
+            out.println(message.toJSONObject());
         }
     }
-
 
     @Override
     public void run() {
+        this.running = true;
         try {
-
-
             String message;
-            // 🔁 boucle d'écoute permanente du client
-            while ((message = in.readLine()) != null) {
-                server.log("Message du client : " + message, 2); // INFO
+            while (this.running && (message = in.readLine()) != null) {
 
-                if (message.equalsIgnoreCase("bye")) {
-                    break;
-                }
+                server.processClientMessage(this,message);
+
+
             }
 
         } catch (IOException e) {
-            server.log("Erreur lors de la fermeture du socket client : " + e.getMessage(), 4); // ERROR
 
+            Logger.log("Erreur lors de la fermeture du socket client : " + e.getMessage(), Logger.LogType.ERROR,"server - handler");
         } finally {
-            // Nettoyage à la fin
             try {
                 clientSocket.close();
-            } catch (IOException e) {}
-                server.removeClient(this);
+                Logger.log("Socket client fermé", Logger.LogType.SUCCESS,"server - handler");
+            } catch (IOException ignored) {}
+
 
         }
     }
+
+
+    public int getId(){
+        return this.id;
+    }
+    public boolean isAdmin(){return this.admin;}
+
+
+    public void stop(){
+        this.running = false;
+    }
+
+
 }

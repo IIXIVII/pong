@@ -1,94 +1,212 @@
 package Server;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import Common.*;
+
+import Common.messages.*;
+
+
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class Server implements Runnable {
-    private final Integer port = 8085;
+
+    private String adminKey;
+    private Integer port = 8085;
     private ServerSocket serverSocket;
     private List<ClientHandler> clients = new ArrayList<>();
+    //private ArrayList<Thread> threadClients = new ArrayList<>();
+    private boolean running = false;
+    private String gameLogic = null;
+    public Server(Integer port, String adminKey) {
+        this.port = port;
+        this.adminKey = adminKey;
+    }
 
     @Override
     public void run() {
-        log("Serveur démarre !", 5);
+        Logger.log("Serveur démarre !", Logger.LogType.DEBUG,"SERVER");
+        this.running = true;
 
-        this.initServer();
+        if (!this.initServer()) {
+            this.running = false;
+            Logger.log("Arrêt du serveur car l'initialisation du socket a échoué.", Logger.LogType.ERROR, "SERVER");
+            return;
+        }
+
         // Boucle d'écoute ou autre traitement serveur
-        while (true) {
+        while (clients.size() != 2 && this.running) {
 
             Socket clientSocket = null; // Attend un client
             try {
-                log("En attente d'un client...", 2);  // INFO
+                Logger.log("En attente d'un client...", Logger.LogType.INFO,"server"); // INFO
                 clientSocket = serverSocket.accept();
-                log("Nouveau client : " + clientSocket.getInetAddress(), 1); // SUCCESS
+
 
                 ClientHandler handler = new ClientHandler(clientSocket, this);
                 clients.add(handler);
-
                 new Thread(handler).start();
+                Logger.log("Nouveau client : " + clientSocket.getInetAddress(), Logger.LogType.SUCCESS,"server");
+
+
+
 
             } catch (IOException e) {
-                log("Erreur lors de l'acceptation du client : " + e.getMessage(), 4); // ERROR
+
+                Logger.log("Erreur lors de l'acceptation du client : " + e.getMessage(), Logger.LogType.ERROR,"server");
                 throw new RuntimeException(e);
             }
 
-
-
         }
+
+        while (this.running){
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+
+        new ArrayList<>(clients).forEach(client -> {
+            client.stop();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            this.removeClient(client); // OK ici car tu ne modifies pas la liste source de la boucle
+        });
+
+
+
+        this.requestShutdown();
+        Logger.log("Serveur est eteind", Logger.LogType.SUCCESS,"SERVER");
     }
 
 
-    public void initServer(){
-        try  {
+
+    public boolean initServer() {
+        try {
             this.serverSocket = new ServerSocket(port);
-            log("Serveur démarré sur le port " + port, 1); // SUCCESS
+            Logger.log("Serveur démarré sur le port " + port, Logger.LogType.SUCCESS,"server");
+            return true;
         } catch (IOException e) {
-            log("Erreur serveur : " + e.getMessage(), 4);  // ERROR
+            Logger.log("Erreur serveur : " + e.getMessage(), Logger.LogType.ERROR,"server");
+            return false;
+        }
+    }
+
+    public void requestShutdown() {
+        running = false;
+        this.broadcastMessageToAll(new ShutdownMessage(-1,"client doit se deconnecté"));
+
+        Logger.log("Arrêt du serveur demandé...", Logger.LogType.WARNING,"server");
+        try {
+            Thread.sleep(1000);
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close(); // Débloque le .accept()
+                Logger.log("Socket fermé", Logger.LogType.SUCCESS,"SERVER");
+            }
+        } catch (IOException e) {
+            Logger.log("Erreur lors de la fermeture du serveur : " + e.getMessage(), Logger.LogType.ERROR,"server");
+
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
 
-    public void removeClient(ClientHandler removeclient){
+
+    public void processClientMessage(ClientHandler clientHandler, String rawMessage) {
+        GameMessage deserializedMessage = null;
+        int senderPlayerId = clientHandler.getId(); // ID du joueur via le handler
+
+        try {
+            JSONObject jsonMsg = new JSONObject(rawMessage);
+            String cmd = jsonMsg.getString("cmd");
+
+            // Désérialisation basée sur la commande
+            switch (cmd) {
+                case MovePaddleMessage.CMD:
+                    deserializedMessage = new MovePaddleMessage(jsonMsg, senderPlayerId);
+                    break;
+                case ConnectMessage.CMD :
+                    deserializedMessage = new ConnectMessage(jsonMsg, senderPlayerId);
+                    if (((ConnectMessage) deserializedMessage).getAdminKey() == this.adminKey){
+                        clientHandler.admin = true;
+                    }
+                    deserializedMessage.log("server - handler");
+
+
+                    ConnectMessage m = new ConnectMessage(clientHandler.getId(),"","Connexion validé !");
+                    m.log("IFUGAJKEFJKH");
+                    clientHandler.sendMessage(m);
+
+                    return;
+
+                case ShutdownMessage.CMD:
+                    if (clientHandler.isAdmin()){
+                        requestShutdown();
+                        return;
+                    } else {
+                        Logger.log("Client n'a pas les permission pour shutdown le serveur", Logger.LogType.WARNING,"SERVER");
+                    }
+
+
+                // Ajouter d'autres types de messages que le client peut envoyer
+                default:
+                    Logger.log("Commande client inconnue: " + cmd + " de Joueur " + senderPlayerId, Logger.LogType.WARNING, "SERVER");
+
+                    return;
+            }
+
+            if (deserializedMessage != null) {
+                deserializedMessage.log("SERVER_RECV"); // Utilise la méthode log de GameMessage
+
+                if (gameLogic != null) {
+                    //gameLogic.processPlayerAction(deserializedMessage); // GameLogic traite l'action
+                } else {
+                    Logger.log("GameLogic non initialisé, message ignoré: " + cmd, Logger.LogType.WARNING, "SERVER");
+                }
+            }
+
+        } catch (JSONException e) {
+            Logger.log("Erreur JSON lors du traitement du message de Joueur " + senderPlayerId + ": " + e.getMessage() + " | Brut: " + rawMessage, Logger.LogType.ERROR, "SERVER");
+        } catch (Exception e) { // Pour attraper toute autre erreur non prévue
+            Logger.log("Erreur inattendue en traitant le message de Joueur " + senderPlayerId + ": " + e.getMessage(), Logger.LogType.ERROR, "SERVER");
+            e.printStackTrace();
+        }
+    }
+
+
+    public void removeClient(ClientHandler removeclient) {
+
         this.clients.remove(removeclient);
-        log("Client retiré : " + removeclient, 3); // WARNING
+        Logger.log("Client retiré : " + removeclient, Logger.LogType.WARNING,"server");
     }
 
-    public void log(String msg, int type){
-        String logType;
-        switch (type) {
-            case 1:
-                logType = "\u001B[32m[SUCCESS]\u001B[0m";// vert
+    public ClientHandler getClient(int index){
+        return this.clients.get(index);
+    }
 
-                break;
-            case 2:
-                logType = "\u001B[34m[INFO]\u001B[0m";// Bleu
 
-                break;
-            case 3:
-                logType = "\u001B[33m[WARNING]\u001B[0m";   // Jaune
+    public void broadcastMessageToAll(GameMessage message) {
+        if (message == null) return;
+        message.log("SERVER - broadcast");
 
-                break;
-            case 4:
-                logType = "\u001B[31m[ERROR]\u001B[0m";     // Rouge
-                break;
-            case 5:
-                logType = "\u001B[35m[DEBUT]\u001B[0m";     // Magenta
-                break;
-
-            default:
-                logType = "\u001B[0m[UNKNOWN]\u001B[0m";   // Magenta
+        synchronized (clients) {
+            for (ClientHandler client : clients) {
+                client.sendMessage(message);
+            }
         }
-
-        System.out.println(logType + "\u001B[33m" + DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now()) + "\u001B[0m-\u001B[2m SERVER \u001B[0m- " + msg);
-
     }
-
 }
 
 
