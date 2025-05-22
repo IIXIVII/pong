@@ -10,6 +10,5 @@ public interface Screen {
     JPanel getPanel();
     void onShow();
     void onHide();
-    Dimension getPreferredSize();
     void updateState(GameStateDto state);
 }

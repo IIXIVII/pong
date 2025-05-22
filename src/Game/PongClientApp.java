@@ -22,7 +22,7 @@ public class PongClientApp {
     private JPanel mainPanel;
     private Map<ScreenName, Screen> screens;
     private Screen currentScreenName;
-    public static Client client;
+    public Client client;
 
 
     public PongClientApp() {
@@ -49,6 +49,7 @@ public class PongClientApp {
         addScreen(new TitleScreen(TITLE, this));
         addScreen(new LobbyScreen(LOBBY, this));
         addScreen(new GameScreen(GAME, this));
+        addScreen(new EndingScreen(ENDING, this));
 
 
         frame.add(mainPanel);
@@ -58,7 +59,7 @@ public class PongClientApp {
         frame.setVisible(true);
 
         // Show the initial screen
-        switchToScreen(ScreenName.TITLE);
+        switchToScreen(TITLE);
     }
 
     private void addScreen(Screen screen) {
@@ -67,13 +68,10 @@ public class PongClientApp {
     }
 
     public void switchToScreen(ScreenName screenName) {
-        if (currentScreenName != null) {
-            currentScreenName.onHide();
-        }
         currentScreenName = this.screens.get(screenName);
+
         if (currentScreenName != null) {
             cardLayout.show(mainPanel, screenName.toString());
-            currentScreenName.onShow();
             currentScreenName.getPanel().requestFocusInWindow();
         } else {
             System.err.println("Error: Screen with name '" + screens + "' not found.");

@@ -19,7 +19,7 @@ public class Client implements Runnable {
     private int id = -1;
     private final String serverHost;
     private final int serverPort;
-    private boolean admin = false;
+    private boolean host = false;
 
     private Socket socket;
     private ObjectOutputStream out;
@@ -31,7 +31,7 @@ public class Client implements Runnable {
     private Client(String serverHost, int serverPort, String adminKey, boolean createServer) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
-        this.admin = (adminKey != null && !adminKey.isEmpty());
+        this.host = (adminKey != null && !adminKey.isEmpty());
 
         if (createServer) {
             new Thread(new Server(serverPort, adminKey)).start();
@@ -70,7 +70,7 @@ public class Client implements Runnable {
             @SuppressWarnings("unchecked")
             GameMessage<ConnectData> resp = (GameMessage<ConnectData>) in.readObject();
             this.id = resp.getId();
-            this.admin = resp.getData().getAdminKey().equals(adminKey);
+            this.host = resp.getData().getAdminKey().equals(adminKey);
             Logger.log("Connecté avec ID=" + id + " nbConnected=" + resp.getData().getNbConnected(),
                     Logger.LogType.INFO, "CLIENT");
         } catch (ClassNotFoundException e) {
@@ -122,7 +122,7 @@ public class Client implements Runnable {
 
     public boolean quit() {
         GameMessage<?> msg;
-        if (admin) {
+        if (host) {
             msg = new GameMessage<>(CommandMessage.SHUTDOWN, id, "Déconnexion admin", null);
         } else {
             msg = new GameMessage<>(CommandMessage.QUIT, id, "Déconnexion", null);
@@ -138,5 +138,9 @@ public class Client implements Runnable {
 
     public GameMessage<?> pollResponse() {
         return responses.poll();
+    }
+
+    public boolean getHost() {
+        return host;
     }
 }

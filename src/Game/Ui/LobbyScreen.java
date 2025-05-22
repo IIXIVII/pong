@@ -13,8 +13,8 @@ public class LobbyScreen extends BaseScreen {
     private JButton startGameButton;
     private JButton backButton;
 
-    public LobbyScreen(ScreenName screenName, PongClientApp manager) {
-        super(screenName, manager);
+    public LobbyScreen(ScreenName screenName, PongClientApp app) {
+        super(screenName, app);
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -22,22 +22,22 @@ public class LobbyScreen extends BaseScreen {
         gbc.anchor = GridBagConstraints.CENTER;
 
         titleLabel = new JLabel("GAME LOBBY");
-        UiStyle.styleLabel(titleLabel, UiStyle.FONT_TITLE.deriveFont(40f), UiStyle.DEFAULT_COLOR);
+        UiStyle.styleLabel(titleLabel, UiStyle.FONT_TITLE, UiStyle.DEFAULT_COLOR);
         gbc.insets = new Insets(20, 20, 20, 20);
         add(titleLabel, gbc);
 
         playersLabel = new JLabel("PLAYERS: 1/2");
-        UiStyle.styleLabel(playersLabel, UiStyle.FONT_SUBTITLE.deriveFont(22f), UiStyle.DEFAULT_COLOR);
+        UiStyle.styleLabel(playersLabel, UiStyle.FONT_SUBTITLE, UiStyle.DEFAULT_COLOR);
         gbc.insets = new Insets(10, 20, 10, 20);
         add(playersLabel, gbc);
 
         statusLabel = new JLabel("Waiting for opponent...");
-        UiStyle.styleLabel(statusLabel, UiStyle.FONT_LABEL.deriveFont(18f), UiStyle.ACCENT_COLOR);
+        UiStyle.styleLabel(statusLabel, UiStyle.FONT_LABEL, UiStyle.ACCENT_COLOR);
         add(statusLabel, gbc);
 
         startGameButton = new JButton("START GAME");
         UiStyle.styleButton(startGameButton);
-        startGameButton.addActionListener(e -> manager.switchToScreen(ScreenName.GAME));
+        startGameButton.addActionListener(e -> app.switchToScreen(ScreenName.GAME));
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(20, 80, 10, 80); // Wider buttons
         add(startGameButton, gbc);
@@ -46,17 +46,14 @@ public class LobbyScreen extends BaseScreen {
         UiStyle.styleButton(backButton);
         backButton.addActionListener(e -> {
             this.onbackButtonPressed();
-
-            manager.switchToScreen(ScreenName.TITLE);
         });
         gbc.fill = GridBagConstraints.HORIZONTAL; // Make back button same width
         gbc.insets = new Insets(10, 80, 20, 80);
         add(backButton, gbc);
     }
-
     public void onbackButtonPressed(){
-        PongClientApp.client.quit();
-
+        app.client.quit();
+        app.switchToScreen(ScreenName.TITLE);
     }
 
 

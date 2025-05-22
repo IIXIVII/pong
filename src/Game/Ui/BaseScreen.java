@@ -1,21 +1,20 @@
 package Game.Ui;
 
 import Common.GameStateDto;
-import Game.Client;
 import Game.Ui.Style.*;
 import Game.PongClientApp;
 import javax.swing.*;
 import java.awt.*;
 
 abstract class BaseScreen extends JPanel implements Screen{
-    protected PongClientApp appManager;
+    protected PongClientApp app;
     private final ScreenName screenName;
     protected GameStateDto currentLocalState;
 
 
-    public BaseScreen(ScreenName name, PongClientApp manager) {
+    public BaseScreen(ScreenName name, PongClientApp app) {
         this.screenName = name;
-        this.appManager = manager;
+        this.app = app;
         setFocusable(true);
         this.currentLocalState = new GameStateDto();
         setBackground(UiStyle.BACKGROUND_COLOR);
@@ -29,6 +28,7 @@ abstract class BaseScreen extends JPanel implements Screen{
 
     @Override
     public void onShow() {
+        repaint();
         // System.out.println(getName() + " is now visible. Requesting focus...");
         SwingUtilities.invokeLater(this::requestFocusInWindow);
     }
