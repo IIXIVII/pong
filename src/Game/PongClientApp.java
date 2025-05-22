@@ -1,13 +1,16 @@
 package Game;
 
 import Common.GameStateDto;
+import Common.Messages.GameMessage;
 import Game.Ui.*;
 import Game.Ui.Style.*;
+import Server.Server;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,6 +22,7 @@ public class PongClientApp {
     private JPanel mainPanel;
     private Map<ScreenName, Screen> screens;
     private Screen currentScreenName;
+    public static Client client;
 
 
     public PongClientApp() {
@@ -106,6 +110,8 @@ public class PongClientApp {
             }
         });
     }
+
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(PongClientApp::new);

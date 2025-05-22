@@ -145,9 +145,12 @@ public class Server implements Runnable {
                     deserializedMessage.log("server - handler");
 
 
-                    ConnectMessage m = new ConnectMessage(clientHandler.getId(),"","Connexion validé !");
+
+                    ConnectMessage m = new ConnectMessage(clientHandler.getId(),"","Connexion validé !",this.clients.size());
                     m.log("IFUGAJKEFJKH");
                     clientHandler.sendMessage(m);
+
+                    if (this.clients.size() == 2) this.broadcastMessageToAll(new ConnectMessage(-2,"","L'ensemble des clients sont connecté",this.clients.size()));
 
                     return;
 
@@ -156,10 +159,18 @@ public class Server implements Runnable {
                         requestShutdown();
                         return;
                     } else {
+
                         Logger.log("Client n'a pas les permission pour shutdown le serveur", Logger.LogType.WARNING,"SERVER");
                     }
+                case QuitMessage.CMD:
+                    this.clients.remove(clientHandler);
 
+                    deserializedMessage = new QuitMessage(clientHandler.getId(), rawMessage);
 
+                    deserializedMessage.log("server - handler");
+
+                    Logger.log("Client " + clientHandler.getId() +" ce deconnecte, server possede plus que " + this.clients.size()+ "client", Logger.LogType.SUCCESS,"SERVER");
+                    return;
                 // Ajouter d'autres types de messages que le client peut envoyer
                 default:
                     Logger.log("Commande client inconnue: " + cmd + " de Joueur " + senderPlayerId, Logger.LogType.WARNING, "SERVER");

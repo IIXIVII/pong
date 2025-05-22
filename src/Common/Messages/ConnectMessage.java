@@ -9,13 +9,15 @@ public class ConnectMessage extends GameMessage {
     public static final String CMD = "connect"; // La commande spécifique
 
     private String adminKey = "";
+    private Integer nbconnected = 0;
 
 
 
-    public ConnectMessage(int id, String adminKey, String message) {
+    public ConnectMessage(int id, String adminKey, String message, Integer nbconnected) {
         super(ConnectMessage.CMD, message, id);
 
         this.adminKey = adminKey;
+        this.nbconnected = nbconnected;
     }
 
 
@@ -38,16 +40,14 @@ public class ConnectMessage extends GameMessage {
         return adminKey != null && !adminKey.isEmpty();
     }
 
+    public Integer getNbconnected(){return nbconnected;};
 
 
     @Override
     public JSONObject toJSONObject() throws JSONException {
-        JSONObject json = new JSONObject();
-        json.put("cmd", this.cmd); // this.cmd est "connect"
-        // On ne met pas le playerId dans le JSON sortant si c'est le client qui envoie,
-        // car il ne le connaît pas encore. Le serveur l'associera.
-        // Si le serveur envoyait ce message (improbable), il mettrait le playerId.
-        json.put("id",this.id);
+
+        JSONObject json = super.toJSONObject();
+
         JSONObject dataObject = new JSONObject();
 
         if (this.adminKey != null) {
@@ -55,9 +55,8 @@ public class ConnectMessage extends GameMessage {
             // Pour un message client -> serveur, c'est ok.
             dataObject.put("admin_key", this.adminKey);
         }
-        if (this.getMessage() != null) {
-            json.put("msg", this.getMessage());
-        }
+
+        dataObject.put("nbconnected",this.nbconnected);
 
         json.put("data", dataObject);
         return json;
@@ -65,17 +64,14 @@ public class ConnectMessage extends GameMessage {
 
     @Override
     protected void initFromJSONObject(JSONObject jsonData) throws JSONException {
-        // playerId est déjà défini par super(playerIdFromHandler)
-        this.cmd = jsonData.getString("cmd");
-        if (!ConnectMessage.CMD.equals(this.cmd)) {
-            throw new JSONException("CMD mismatch: Expected '" + ConnectMessage.CMD + "' but got '" + this.cmd + "'");
-        }
-        this.message = jsonData.optString("msg", null); // Le message associé
-        this.id = jsonData.optInt("id");
+
+        super.initFromJSONObject(jsonData);
+
         JSONObject dataPart = jsonData.optJSONObject("data");
         if (dataPart != null) {
 
             this.adminKey = dataPart.optString("admin_key", null);
+            this.nbconnected = dataPart.getInt("nbconnected");
 
         } else {
             // Si "data" est absent, les champs optionnels restent null
@@ -89,6 +85,7 @@ public class ConnectMessage extends GameMessage {
     protected String getSpecificDataString() {
         StringBuilder sb = new StringBuilder();
         if (hasAdminKey()) sb.append("HasAdminKey: true "); // Ne pas logger la clé elle-même
+        sb.append("Nombre de connecté : " + this.nbconnected);
         return sb.toString().trim();
     }
 }

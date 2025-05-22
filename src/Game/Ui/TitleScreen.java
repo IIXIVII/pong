@@ -2,11 +2,13 @@ package Game.Ui;
 
 import Common.GameStateDto;
 import Common.GameStatus;
+import Game.Client;
 import Game.PongClientApp;
 import Game.Ui.Style.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 public class TitleScreen extends BaseScreen {
     private JButton hostButton;
@@ -40,7 +42,10 @@ public class TitleScreen extends BaseScreen {
         // HOST button
         hostButton = new JButton("HOST GAME");
         UiStyle.styleButton(hostButton);
-        hostButton.addActionListener(e -> appManager.switchToScreen(ScreenName.LOBBY));
+        hostButton.addActionListener(e -> {
+            this.onHostButtonPressed();
+            appManager.switchToScreen(ScreenName.LOBBY);
+        });
         gbc.insets = new Insets(10, 50, 10, 50);
         add(hostButton, gbc);
 
@@ -53,6 +58,10 @@ public class TitleScreen extends BaseScreen {
         // JOIN Button
         joinButton = new JButton("JOIN");
         UiStyle.styleButton(joinButton);
+        joinButton.addActionListener(e -> {
+            this.onJoinButtonPressed();
+            appManager.switchToScreen(ScreenName.LOBBY);
+        });
         gbc.insets = new Insets(0, 50, 20, 50);
         add(joinButton, gbc);
     }
@@ -74,9 +83,18 @@ public class TitleScreen extends BaseScreen {
     }
 
     private void onHostButtonPressed() {
-        //TODO
+        try {
+            PongClientApp.client = Client.getInstance("localhost",8085,"daz",true);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     private void onJoinButtonPressed() {
-        //TODO
+        try {
+            PongClientApp.client= Client.getInstance(this.ipAddressField.getText(),8085,"",false);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

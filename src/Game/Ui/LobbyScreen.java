@@ -1,4 +1,5 @@
 package Game.Ui;
+import Common.Messages.QuitMessage;
 import Game.PongClientApp;
 import Game.Ui.Style.*;
 
@@ -43,10 +44,19 @@ public class LobbyScreen extends BaseScreen {
 
         backButton = new JButton("LEAVE LOBBY");
         UiStyle.styleButton(backButton);
-        backButton.addActionListener(e -> manager.switchToScreen(ScreenName.TITLE));
+        backButton.addActionListener(e -> {
+            this.onbackButtonPressed();
+
+            manager.switchToScreen(ScreenName.TITLE);
+        });
         gbc.fill = GridBagConstraints.HORIZONTAL; // Make back button same width
         gbc.insets = new Insets(10, 80, 20, 80);
         add(backButton, gbc);
+    }
+
+    public void onbackButtonPressed(){
+        PongClientApp.client.quit();
+
     }
 
 

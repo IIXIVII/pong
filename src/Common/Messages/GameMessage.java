@@ -57,8 +57,30 @@ public abstract class GameMessage {
     protected abstract String getSpecificDataString();
 
 
-    public abstract JSONObject toJSONObject() throws JSONException;
+    public JSONObject toJSONObject() throws JSONException{
+        JSONObject json = new JSONObject();
+        json.put("cmd", this.cmd); // this.cmd est "connect"
+        // On ne met pas le playerId dans le JSON sortant si c'est le client qui envoie,
+        // car il ne le connaît pas encore. Le serveur l'associera.
+        // Si le serveur envoyait ce message (improbable), il mettrait le playerId.
+        json.put("id",this.id);
 
 
-    protected abstract void initFromJSONObject(JSONObject jsonData) throws JSONException;
+        if (this.getMessage() != null) {
+            json.put("msg", this.getMessage());
+        }
+        return json;
+    };
+
+
+    protected void initFromJSONObject(JSONObject jsonData) throws JSONException{
+        // playerId est déjà défini par super(playerIdFromHandler)
+        this.cmd = jsonData.getString("cmd");
+        if (!ConnectMessage.CMD.equals(this.cmd)) {
+            throw new JSONException("CMD mismatch: Expected '" + ConnectMessage.CMD + "' but got '" + this.cmd + "'");
+        }
+        this.message = jsonData.optString("msg", null); // Le message associé
+        this.id = jsonData.optInt("id");
+
+    };
 }

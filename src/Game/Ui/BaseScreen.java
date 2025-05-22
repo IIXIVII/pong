@@ -1,6 +1,7 @@
 package Game.Ui;
 
 import Common.GameStateDto;
+import Game.Client;
 import Game.Ui.Style.*;
 import Game.PongClientApp;
 import javax.swing.*;
@@ -10,6 +11,7 @@ abstract class BaseScreen extends JPanel implements Screen{
     protected PongClientApp appManager;
     private final ScreenName screenName;
     protected GameStateDto currentLocalState;
+
 
     public BaseScreen(ScreenName name, PongClientApp manager) {
         this.screenName = name;
