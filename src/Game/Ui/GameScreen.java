@@ -12,8 +12,8 @@ import java.awt.geom.Ellipse2D;
 
 public class GameScreen extends BaseScreen {
 
-    public GameScreen(ScreenName screenName, PongClientApp manager) {
-        super(screenName, manager);
+    public GameScreen(ScreenName screenName, PongClientApp app) {
+        super(screenName, app);
         System.out.println("Panel size: " + getWidth() + "x" + getHeight());
         addKeyListener(new KeyAdapter() {
             @Override

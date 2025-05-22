@@ -16,8 +16,8 @@ public class TitleScreen extends BaseScreen {
     private JTextField ipAddressField; // For join IP, styled for terminal
     private JLabel messageLabel;
 
-    public TitleScreen(ScreenName screenName, PongClientApp manager) {
-        super(screenName, manager);
+    public TitleScreen(ScreenName screenName, PongClientApp app) {
+        super(screenName, app);
         setLayout(new GridBagLayout());
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -44,7 +44,7 @@ public class TitleScreen extends BaseScreen {
         UiStyle.styleButton(hostButton);
         hostButton.addActionListener(e -> {
             this.onHostButtonPressed();
-            appManager.switchToScreen(ScreenName.LOBBY);
+            app.switchToScreen(ScreenName.LOBBY);
         });
         gbc.insets = new Insets(10, 50, 10, 50);
         add(hostButton, gbc);
@@ -60,7 +60,7 @@ public class TitleScreen extends BaseScreen {
         UiStyle.styleButton(joinButton);
         joinButton.addActionListener(e -> {
             this.onJoinButtonPressed();
-            appManager.switchToScreen(ScreenName.LOBBY);
+            app.switchToScreen(ScreenName.LOBBY);
         });
         gbc.insets = new Insets(0, 50, 20, 50);
         add(joinButton, gbc);
@@ -83,10 +83,9 @@ public class TitleScreen extends BaseScreen {
     }
 
     private void onHostButtonPressed() {
-        PongClientApp.client = Client.getInstance("localhost",8085,"daz",true);
-
+        app.client = Client.getInstance("localhost",8085,"daz",true);
     }
     private void onJoinButtonPressed() {
-        PongClientApp.client= Client.getInstance(this.ipAddressField.getText(),8085,"",false);
+        app.client = Client.getInstance(this.ipAddressField.getText(),8085,"",false);
     }
 }

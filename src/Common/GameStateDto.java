@@ -23,6 +23,7 @@ public class GameStateDto implements Serializable {
 
     public GameStateDto() {
         // Initialisation par défaut
+        scorePlayer2 = 1;
         player1Y = UiStyle.WINDOW_DIMENSION.height / 2 - UiStyle.PADDLE_HEIGHT / 2;
         player2Y = UiStyle.WINDOW_DIMENSION.height / 2 - UiStyle.PADDLE_HEIGHT / 2;
         currentStatus = GameStatus.WELCOME;
