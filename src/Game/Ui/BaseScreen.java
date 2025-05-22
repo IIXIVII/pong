@@ -1,6 +1,7 @@
 package Game.Ui;
 
 import Common.GameStateDto;
+import Common.GameStatus;
 import Game.Ui.Style.*;
 import Game.PongClientApp;
 import javax.swing.*;
@@ -45,7 +46,7 @@ abstract class BaseScreen extends JPanel implements Screen{
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     }
     @Override
-    public void updateState(GameStateDto newState) {
+    public void updateState(GameStateDto newState, GameStatus currentStatus) {
         this.currentLocalState = newState;
         repaint(); // Redessiner avec le nouvel état
     }

@@ -1,5 +1,6 @@
 package Common.Messages;
 
+import Common.GameStatus;
 import Common.Tools.Logger;
 
 import java.io.Serializable;
@@ -15,14 +16,17 @@ public class GameMessage<T extends Serializable> implements Serializable {
     private String message;      // optionnel, usage libre
     private T data;              // le payload typé
 
+    public GameStatus currentStatus;
+
     public GameMessage() { /* constructeur sans-arg pour sérialisation */ }
 
-    public GameMessage(CommandMessage cmd, int id, String message, T data) {
+    public GameMessage(CommandMessage cmd, int id, String message, T data, GameStatus status) {
         if (cmd == null) throw new IllegalArgumentException("cmd ne peut pas être null");
         this.cmd = cmd;
         this.id = id;
         this.message = message;
         this.data = data;
+        this.currentStatus = status;
     }
 
     // Getters

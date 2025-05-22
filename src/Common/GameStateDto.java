@@ -14,7 +14,7 @@ public class GameStateDto implements Serializable {
     public int scorePlayer1;
     public int scorePlayer2;
 
-    public GameStatus currentStatus;
+
     public String message; // Pour afficher des infos (e.g., "Waiting for Player 2", "Player 1 Wins!")
     public int connectedPlayers = 0;
     public boolean canStartGame = false; // Si le bouton "Play" / "Start" doit être activé
@@ -26,7 +26,7 @@ public class GameStateDto implements Serializable {
         scorePlayer2 = 1;
         player1Y = UiStyle.WINDOW_DIMENSION.height / 2 - UiStyle.PADDLE_HEIGHT / 2;
         player2Y = UiStyle.WINDOW_DIMENSION.height / 2 - UiStyle.PADDLE_HEIGHT / 2;
-        currentStatus = GameStatus.WELCOME;
+
     }
 
 

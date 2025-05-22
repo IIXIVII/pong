@@ -1,6 +1,8 @@
 // Refactored Server.java
 package Server;
 
+import Common.GameStateDto;
+import Common.GameStatus;
 import Common.Messages.CommandMessage;
 import Common.Messages.ConnectData;
 import Common.Messages.GameMessage;
@@ -50,15 +52,13 @@ public class Server implements Runnable {
             if (running) {
                 Logger.log("Erreur serveur: " + e.getMessage(), Logger.LogType.ERROR, "SERVER");
             }
-        } finally {
-
         }
     }
 
     public void shutdownServer() {
         running = false;
         // Broadcast shutdown message
-        broadcast(new GameMessage<>(CommandMessage.SHUTDOWN, -1, "Arrêt du serveur", ""));
+        broadcast(new GameMessage<>(CommandMessage.SHUTDOWN, -1, "Arrêt du serveur", "", GameStatus.WELCOME));
         // Évite ConcurrentModificationException en copiant la liste
         new ArrayList<>(this.clients).forEach(this::removeClient);
 
@@ -80,20 +80,41 @@ public class Server implements Runnable {
                 GameMessage<ConnectData> connectMsg = (GameMessage<ConnectData>) msg;
                 if (adminKey.equals(connectMsg.getData().getAdminKey())) {
                     client.setAdmin(true);
+                    client.send(new GameMessage<>(CommandMessage.CONNECT, client.getId(), "Connexion validée !",
+                            new ConnectData(adminKey, clients.size()), GameStatus.WELCOME));
+                } else {
+                    client.send(new GameMessage<>(CommandMessage.CONNECT, client.getId(), "Connexion validée !",
+                            new ConnectData("", clients.size()), GameStatus.WELCOME));
                 }
-                client.send(new GameMessage<>(CommandMessage.CONNECT, client.getId(), "Connexion validée !",
-                        new ConnectData(adminKey, clients.size())));
+
+
+                if (this.clients.size() == 2) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    GameStateDto g = new GameStateDto();
+                    g.connectedPlayers = 2;
+                    g.message = "ceci ets un test car je ne comprend pas";
+                    this.broadcast(new GameMessage<>(CommandMessage.INFO_SERVER,-2,"Connection reussie",g,GameStatus.CONNECTING));
+                }
             }
             case QUIT -> {
                 removeClient(client);
-                broadcast(new GameMessage<>(CommandMessage.QUIT, client.getId(), "Client déconnecté", ""));
+                broadcast(new GameMessage<>(CommandMessage.QUIT, client.getId(), "Client déconnecté", "", GameStatus.WELCOME));
+                GameStateDto g = new GameStateDto();
+                g.connectedPlayers = 1;
+                g.message = "ceci ets un test car je ne comprend pas";
+                this.broadcast(new GameMessage<>(CommandMessage.INFO_SERVER,-2,"Connection reussie",g,GameStatus.LOBBY_WAITING));
             }
             case SHUTDOWN -> {
                 if (client.isAdmin()) shutdownServer();
             }
             case START_GAME -> {
                 this.gameLogic =  new GameLogic(this);
-                broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", this.gameLogic.getGameState()));
+                broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", this.gameLogic.getGameState(), GameStatus.WELCOME));
             }
 
             default -> Logger.log("Commande inconnue: " + msg.getCmd(), Logger.LogType.WARNING, "SERVER");

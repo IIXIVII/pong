@@ -40,6 +40,11 @@ public class GameScreen extends BaseScreen {
     }
 
 
+
+    public void tick() {
+        repaint(); // Pour l'instant, juste rafraîchir l'écran
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

@@ -4,11 +4,10 @@ import Common.GameStateDto;
 import Common.GameStatus;
 import Game.Client;
 import Game.PongClientApp;
-import Game.Ui.Style.*;
+import Game.Ui.Style.UiStyle;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
 
 public class TitleScreen extends BaseScreen {
     private JButton hostButton;
@@ -67,13 +66,13 @@ public class TitleScreen extends BaseScreen {
     }
 
     @Override
-    public void updateState(GameStateDto newState) {
-        super.updateState(newState); // Met à jour currentLocalState et repaint
-        if (newState.currentStatus == GameStatus.CONNECTING) {
+    public void updateState(GameStateDto newState,GameStatus currentStatus) {
+        super.updateState(newState, currentStatus); // Met à jour currentLocalState et repaint
+        if (currentStatus == GameStatus.CONNECTING) {
             messageLabel.setText(newState.message);
             hostButton.setEnabled(false);
             joinButton.setEnabled(false);
-        } else if (newState.currentStatus == GameStatus.WELCOME || newState.currentStatus == GameStatus.ERROR) {
+        } else if (currentStatus == GameStatus.WELCOME || currentStatus == GameStatus.ERROR) {
             messageLabel.setText(newState.message != null ? newState.message : " ");
             hostButton.setEnabled(true);
             joinButton.setEnabled(true);
@@ -83,9 +82,9 @@ public class TitleScreen extends BaseScreen {
     }
 
     private void onHostButtonPressed() {
-        app.client = Client.getInstance("localhost",8085,"daz",true);
+        app.client = Client.getInstance(this.app,"localhost",8085,"daz",true);
     }
     private void onJoinButtonPressed() {
-        app.client = Client.getInstance(this.ipAddressField.getText(),8085,"",false);
+        app.client = Client.getInstance(this.app,this.ipAddressField.getText(),8085,"",false);
     }
 }

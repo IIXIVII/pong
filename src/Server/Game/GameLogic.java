@@ -1,7 +1,6 @@
 package Server.Game;
 
 import Common.GameStateDto;
-import Common.GameStatus;
 import Server.Server;
 
 import java.time.LocalDateTime;
@@ -20,7 +19,6 @@ public class GameLogic {
 
         gameState.canStartGame = false;
         gameState.connectedPlayers = server.getNbClient();
-        gameState.currentStatus = GameStatus.PLAYING;
         gameState.winningScore = 0;
         gameState.scorePlayer1 = 0;
         gameState.scorePlayer2 = 0;

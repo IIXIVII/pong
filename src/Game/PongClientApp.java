@@ -2,19 +2,20 @@ package Game;
 
 import Common.GameStateDto;
 import Common.Messages.GameMessage;
+import Common.Tools.Logger;
 import Game.Ui.*;
-import Game.Ui.Style.*;
-import Server.Server;
+import Game.Ui.Style.UiStyle;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import static Game.Ui.ScreenName.*;
+
+
 
 public class PongClientApp {
     private JFrame frame;
@@ -24,6 +25,9 @@ public class PongClientApp {
     private Screen currentScreenName;
     public Client client;
 
+    private Timer gameLoopTimer;
+    private final int FPS = 60;
+    private final int FRAME_TIME_MS = 1000 / FPS;
 
     public PongClientApp() {
         screens = new HashMap<>();
@@ -34,7 +38,7 @@ public class PongClientApp {
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                //TODO Informer le serveur d'une déconnexion
+                client.quit();
                 System.out.println("Application closing.");
                 frame.dispose();
                 System.exit(0);
@@ -50,7 +54,6 @@ public class PongClientApp {
         addScreen(new LobbyScreen(LOBBY, this));
         addScreen(new GameScreen(GAME, this));
         addScreen(new EndingScreen(ENDING, this));
-
 
         frame.add(mainPanel);
         frame.setResizable(false);
@@ -73,21 +76,79 @@ public class PongClientApp {
         if (currentScreenName != null) {
             cardLayout.show(mainPanel, screenName.toString());
             currentScreenName.getPanel().requestFocusInWindow();
+
+            if (currentScreenName instanceof GameScreen || currentScreenName instanceof LobbyScreen ) {
+                startGameLoop();
+            } else {
+                stopGameLoop();
+            }
         } else {
-            System.err.println("Error: Screen with name '" + screens + "' not found.");
+            System.err.println("Error: Screen with name '" + screenName + "' not found.");
+        }
+    }
+
+    private void startGameLoop() {
+        gameLoopTimer = new Timer(FRAME_TIME_MS, e -> handleServerUpdate());
+        Logger.log("Client Prepare la loop",Logger.LogType.DEBUG,"CLIENTAPP");
+        gameLoopTimer.start();
+        Logger.log("Client execute la loop",Logger.LogType.DEBUG,"CLIENTAPP");
+    }
+
+    private void stopGameLoop() {
+        if (gameLoopTimer != null) {
+            Logger.log("Client arrete la loop",Logger.LogType.DEBUG,"CLIENTAPP");
+            gameLoopTimer.stop();
+        }
+    }
+
+    private void gameLoopTick() {
+        if (currentScreenName instanceof GameScreen) {
+            ((GameScreen) currentScreenName).tick();
         }
     }
 
     // Callback pour les mises à jour du serveur
-    private void handleServerUpdate(GameStateDto newState) {
-        SwingUtilities.invokeLater(() -> { // Mises à jour de l'UI sur le thread EDT
-            // Mettre à jour les données de chaque écran
-            for (Screen screen : screens.values()) {
-                screen.updateState(newState);
-            }
+    private void handleServerUpdate() {
 
+        boolean receivedUpdate = false;
+
+
+        GameMessage<?> msg = client.pollResponse();
+        GameMessage<?> finalMsg = null;
+
+        while (msg != null) {
+            client.process(msg);
+            finalMsg = msg;
+            msg =  client.pollResponse();
+        }
+
+
+
+
+
+
+
+        GameMessage<?> finalMsg1 = finalMsg;
+        SwingUtilities.invokeLater(() -> { // Mises à jour de l'UI sur le thread EDT
+
+            // Mettre à jour les données de chaque écran
+            if (finalMsg1 != null && finalMsg1.getData() instanceof GameStateDto) {
+                GameStateDto newState = (GameStateDto) finalMsg1.getData(); // Cast après vérification
+
+                    finalMsg1.log("CLIENTAPP");
+                    for (Screen screen : screens.values()) {
+                        screen.updateState(newState, finalMsg1.currentStatus);
+                    }
+                }
+
+
+
+
+
+
+            if (finalMsg1 != null){
             // Changer d'écran en fonction du nouvel état du jeu
-            switch (newState.currentStatus) {
+            switch (finalMsg1.currentStatus) {
                 case WELCOME: // Si le serveur nous remet en Welcome (rare)
                     switchToScreen(TITLE);
                     break;
@@ -106,7 +167,7 @@ public class PongClientApp {
                     // jusqu'à ce que le serveur confirme un nouvel état.
                     // Le WelcomeScreen gère l'affichage de "Connecting..."
                     break;
-            }
+            }}
         });
     }
 

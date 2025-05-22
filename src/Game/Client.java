@@ -1,13 +1,16 @@
 // Refactored Client.java
 package Game;
 
+import Common.GameStatus;
+import Common.Messages.CommandMessage;
 import Common.Messages.ConnectData;
 import Common.Messages.GameMessage;
-import Common.Messages.CommandMessage;
 import Common.Tools.Logger;
 import Server.Server;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -25,13 +28,16 @@ public class Client implements Runnable {
     private ObjectOutputStream out;
     private ObjectInputStream in;
 
+    private PongClientApp app;
+
     private final BlockingQueue<GameMessage<?>> responses = new LinkedBlockingQueue<>();
     private volatile boolean running = false;
 
-    private Client(String serverHost, int serverPort, String adminKey, boolean createServer) {
+    private Client(PongClientApp app, String serverHost, int serverPort, String adminKey, boolean createServer) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
         this.host = (adminKey != null && !adminKey.isEmpty());
+        this.app = app;
 
         if (createServer) {
             new Thread(new Server(serverPort, adminKey)).start();
@@ -44,12 +50,13 @@ public class Client implements Runnable {
             throw new RuntimeException(e);
         }
 
+
         new Thread(this).start();
     }
 
-    public static synchronized Client getInstance(String host, int port, String adminKey, boolean createServer) {
+    public static synchronized Client getInstance(PongClientApp app,String host, int port, String adminKey, boolean createServer) {
         if (instance == null) {
-            instance = new Client(host, port, adminKey, createServer);
+            instance = new Client(app,host, port, adminKey, createServer);
         }
         return instance;
     }
@@ -60,9 +67,10 @@ public class Client implements Runnable {
         in = new ObjectInputStream(socket.getInputStream());
         running = true;
 
+
         // Envoi de la connexion
         GameMessage<ConnectData> connectMsg = new GameMessage<>(CommandMessage.CONNECT, -1,
-                "Demande de connexion", new ConnectData(adminKey, 0));
+                "Demande de connexion", new ConnectData(adminKey, 0), GameStatus.WELCOME);
         send(connectMsg);
 
         // Lecture de la réponse de connexion
@@ -73,6 +81,8 @@ public class Client implements Runnable {
             this.host = resp.getData().getAdminKey().equals(adminKey);
             Logger.log("Connecté avec ID=" + id + " nbConnected=" + resp.getData().getNbConnected(),
                     Logger.LogType.INFO, "CLIENT");
+
+
         } catch (ClassNotFoundException e) {
             throw new IOException("Type de message inconnu", e);
         }
@@ -85,20 +95,42 @@ public class Client implements Runnable {
                 @SuppressWarnings("unchecked")
                 GameMessage<?> msg = (GameMessage<?>) in.readObject();
                 Logger.log("Message reçu: " + msg.getCmd(), Logger.LogType.DEBUG, "CLIENT");
-                if (msg.getCmd() == CommandMessage.SHUTDOWN) {
-                    shutdown();
-                } else if (msg.getCmd() == CommandMessage.QUIT) {
-                    shutdown();
-                } else if (msg.getCmd() == CommandMessage.START_GAME){
-
-                } else {
-                    responses.offer(msg);
-                }
+                responses.offer(msg);
             }
         } catch (IOException | ClassNotFoundException e) {
             Logger.log("Erreur réception: " + e.getMessage(), Logger.LogType.ERROR, "CLIENT");
             shutdown();
         }
+    }
+
+    public GameMessage process(GameMessage msg){
+        switch (msg.getCmd()) {
+            case CONNECT:
+                Logger.log("passage au lobby",Logger.LogType.INFO,"CLIENT");
+                break;
+            case INFO_SERVER:
+            case UPDATE_GAME_STATE:
+
+                break;
+
+            case START_GAME:
+                Logger.log("Début de la partie reçu du serveur", Logger.LogType.INFO, "CLIENT");
+                // Tu peux lancer une animation, reset les variables locales, etc.
+                break;
+
+            case SHUTDOWN:
+            case QUIT:
+                Logger.log("Déconnexion serveur", Logger.LogType.INFO, "CLIENT");
+                this.quit();
+                return msg;
+
+            // Ajoute ici d'autres cas si tu attends d'autres messages (chat, score, etc.)
+
+            default:
+                Logger.log("Message non traité: " + msg.getCmd(), Logger.LogType.WARNING, "CLIENT");
+                break;
+        }
+        return msg;
     }
 
     public void send(GameMessage<?> msg) {
@@ -123,9 +155,9 @@ public class Client implements Runnable {
     public boolean quit() {
         GameMessage<?> msg;
         if (host) {
-            msg = new GameMessage<>(CommandMessage.SHUTDOWN, id, "Déconnexion admin", null);
+            msg = new GameMessage<>(CommandMessage.SHUTDOWN, id, "Déconnexion admin", null,GameStatus.WELCOME);
         } else {
-            msg = new GameMessage<>(CommandMessage.QUIT, id, "Déconnexion", null);
+            msg = new GameMessage<>(CommandMessage.QUIT, id, "Déconnexion", null,GameStatus.WELCOME);
         }
         send(msg);
         Client.instance = null;

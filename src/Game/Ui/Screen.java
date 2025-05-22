@@ -1,14 +1,14 @@
 package Game.Ui;
 
 import Common.GameStateDto;
+import Common.GameStatus;
 
 import javax.swing.*;
-import java.awt.*;
 
 public interface Screen {
     ScreenName getScreenName();
     JPanel getPanel();
     void onShow();
     void onHide();
-    void updateState(GameStateDto state);
+    void updateState(GameStateDto state, GameStatus currentStatus);
 }

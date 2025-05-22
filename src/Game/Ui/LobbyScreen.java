@@ -1,7 +1,9 @@
 package Game.Ui;
-import Common.Messages.*;
+
+import Common.GameStateDto;
+import Common.GameStatus;
 import Game.PongClientApp;
-import Game.Ui.Style.*;
+import Game.Ui.Style.UiStyle;
 
 import javax.swing.*;
 import java.awt.*;
@@ -56,5 +58,23 @@ public class LobbyScreen extends BaseScreen {
         app.switchToScreen(ScreenName.TITLE);
     }
 
+
+    @Override
+    public void updateState(GameStateDto newState, GameStatus currentStatus) {
+        super.updateState(newState, currentStatus); // Met à jour currentLocalState + repaint
+
+        // Nombre de joueurs
+        int playersConnected = newState.connectedPlayers; // ou newState.playerNames.size();
+        playersLabel.setText("PLAYERS: " + playersConnected + "/2");
+
+        // Statut d'attente
+        if (playersConnected < 2) {
+            statusLabel.setText("Waiting for opponent...");
+            startGameButton.setEnabled(false);
+        } else {
+            statusLabel.setText("Ready to start!");
+            startGameButton.setEnabled(true);
+        }
+    }
 
 }
