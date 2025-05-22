@@ -2,6 +2,7 @@ package Common;
 import Game.Ui.Style.*;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 public class GameStateDto implements Serializable {
     public int winningScore = 3;
@@ -17,6 +18,8 @@ public class GameStateDto implements Serializable {
     public String message; // Pour afficher des infos (e.g., "Waiting for Player 2", "Player 1 Wins!")
     public int connectedPlayers = 0;
     public boolean canStartGame = false; // Si le bouton "Play" / "Start" doit être activé
+    public LocalDateTime StartTargetTime ;
+
 
     public GameStateDto() {
         // Initialisation par défaut
@@ -24,4 +27,7 @@ public class GameStateDto implements Serializable {
         player2Y = UiStyle.WINDOW_DIMENSION.height / 2 - UiStyle.PADDLE_HEIGHT / 2;
         currentStatus = GameStatus.WELCOME;
     }
+
+
+
 }

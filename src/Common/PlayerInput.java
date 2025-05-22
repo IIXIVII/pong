@@ -6,10 +6,7 @@ public class PlayerInput implements Serializable {
     public enum InputType {
         MOVE_UP,
         MOVE_DOWN,
-        REQUEST_START_GAME,
-        REQUEST_REPLAY,
-        REQUEST_MENU,
-        DISCONNECT
+
     }
 
     public InputType type;

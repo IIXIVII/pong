@@ -1,24 +1,37 @@
 package Server.Game;
 
-import Server.ClientHandler;
+import Common.GameStateDto;
+import Common.GameStatus;
+import Server.Server;
 
-class Game{}
+import java.time.LocalDateTime;
 
-
-class joueur {
-
-    ClientHandler client;
-    Raquette raquette;
-
-}
-
-
-class Raquette {
-
-}
 
 public class GameLogic {
+    GameStateDto gameState;
+    Server server;
+
+    public GameLogic(Server server){
+        this.server = server;
+
+        gameState = new GameStateDto();
+        gameState.player1Y = server.getClient(0).getId();
+        gameState.player2Y = server.getClient(1).getId();
+
+        gameState.canStartGame = false;
+        gameState.connectedPlayers = server.getNbClient();
+        gameState.currentStatus = GameStatus.PLAYING;
+        gameState.winningScore = 0;
+        gameState.scorePlayer1 = 0;
+        gameState.scorePlayer2 = 0;
+        gameState.StartTargetTime = LocalDateTime.now().plusSeconds(5);
+        gameState.message ="";
 
 
+    }
 
+
+    public GameStateDto getGameState() {
+        return gameState;
+    }
 }

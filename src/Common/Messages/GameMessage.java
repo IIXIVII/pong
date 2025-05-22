@@ -1,86 +1,51 @@
 package Common.Messages;
 
-import org.json.JSONObject;
-import org.json.JSONException;
-import Common.Tools.Logger; // Assure-toi que ta classe Logger est accessible
+import Common.Tools.Logger;
 
-public abstract class GameMessage {
-    public static boolean debug = false; // Pour activer/désactiver les logs de message
-    protected String cmd;
-    protected String message;
-    protected int id;
+import java.io.Serializable;
+
+public class GameMessage<T extends Serializable> implements Serializable {
+    private static final long serialVersionUID = 1L;
+    public static boolean debug = true;
 
 
-    public GameMessage(String cmd, String message, int id) {
-        if (cmd == null || cmd.trim().isEmpty()) {
-            throw new IllegalArgumentException("Command 'cmd' cannot be null or empty.");
-        }
+
+    private CommandMessage cmd;
+    private int id;
+    private String message;      // optionnel, usage libre
+    private T data;              // le payload typé
+
+    public GameMessage() { /* constructeur sans-arg pour sérialisation */ }
+
+    public GameMessage(CommandMessage cmd, int id, String message, T data) {
+        if (cmd == null) throw new IllegalArgumentException("cmd ne peut pas être null");
         this.cmd = cmd;
+        this.id = id;
         this.message = message;
-        this.id = id;
+        this.data = data;
     }
 
+    // Getters
+    public CommandMessage getCmd()       { return cmd; }
+    public int getId()            { return id; }
+    public String getMessage()    { return message; }
+    public T getData()            { return data; }
 
-    protected GameMessage(int id) {
-        this.id = id;
-        // cmd et message seront définis par initFromJSONObject dans la sous-classe
-    }
-
-
-    public String getCmd() {
-        return cmd;
-    }
-
-    public String getMessage() { // Renommé pour éviter confusion avec le "message" global
-        return message;
-    }
-
-    public int getId() {
-        return id;
-    }
-
+    // Pour le debug
     public void log(String header) {
         if (GameMessage.debug) {
+            String otherdata = (data != null) ? this.data.toString() : "";
+
             Logger.log(
+                    "message :" +
                     String.format("ID: %d | CMD: %s | MSG: %s | Specifics: %s",
                             this.id,
-                            this.getCmd(),
-                            this.getMessage() == null ? "N/A" : this.getMessage(),
-                            this.getSpecificDataString() // Méthode à implémenter dans les sous-classes pour les détails
+                            this.cmd,
+                            this.message == null ? "N/A" : this.message,// Méthode à implémenter dans les sous-classes pour les détails
+                            otherdata
                     ),
                     Logger.LogType.DEBUG,
                     header);
         }
     }
-
-
-    protected abstract String getSpecificDataString();
-
-
-    public JSONObject toJSONObject() throws JSONException{
-        JSONObject json = new JSONObject();
-        json.put("cmd", this.cmd); // this.cmd est "connect"
-        // On ne met pas le playerId dans le JSON sortant si c'est le client qui envoie,
-        // car il ne le connaît pas encore. Le serveur l'associera.
-        // Si le serveur envoyait ce message (improbable), il mettrait le playerId.
-        json.put("id",this.id);
-
-
-        if (this.getMessage() != null) {
-            json.put("msg", this.getMessage());
-        }
-        return json;
-    };
-
-
-    protected void initFromJSONObject(JSONObject jsonData) throws JSONException{
-        // playerId est déjà défini par super(playerIdFromHandler)
-        this.cmd = jsonData.getString("cmd");
-        if (!ConnectMessage.CMD.equals(this.cmd)) {
-            throw new JSONException("CMD mismatch: Expected '" + ConnectMessage.CMD + "' but got '" + this.cmd + "'");
-        }
-        this.message = jsonData.optString("msg", null); // Le message associé
-        this.id = jsonData.optInt("id");
-
-    };
 }

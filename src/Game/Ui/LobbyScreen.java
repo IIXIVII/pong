@@ -1,5 +1,5 @@
 package Game.Ui;
-import Common.Messages.QuitMessage;
+import Common.Messages.*;
 import Game.PongClientApp;
 import Game.Ui.Style.*;
 

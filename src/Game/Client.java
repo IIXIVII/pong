@@ -1,193 +1,142 @@
+// Refactored Client.java
 package Game;
 
-import Common.Messages.QuitMessage;
-import Server.Server;
-import org.json.JSONException;
-import org.json.JSONObject;
-import Common.Tools.Logger;
-import Common.Messages.ConnectMessage;
+import Common.Messages.ConnectData;
 import Common.Messages.GameMessage;
-import Common.Messages.ShutdownMessage;
+import Common.Messages.CommandMessage;
+import Common.Tools.Logger;
+import Server.Server;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Client implements Runnable {
 
     private static Client instance;
 
     private int id = -1;
-    String serverHost ;
-    Integer serverPort;
-    Integer nbconnectedserver = 0;
-
+    private final String serverHost;
+    private final int serverPort;
     private boolean admin = false;
 
-
     private Socket socket;
-    private BufferedReader in;
-    private PrintWriter out;
+    private ObjectOutputStream out;
+    private ObjectInputStream in;
 
-    private ArrayList<GameMessage> channelResponse = new ArrayList<>();
+    private final BlockingQueue<GameMessage<?>> responses = new LinkedBlockingQueue<>();
+    private volatile boolean running = false;
 
-    private boolean running = false;
-
-    // Constructeur avec paramètres
-    private Client(String serverHost, Integer serverPort, String adminkey, boolean createserver) {
+    private Client(String serverHost, int serverPort, String adminKey, boolean createServer) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
-        if (adminkey != "") this.admin = true;
+        this.admin = (adminKey != null && !adminKey.isEmpty());
 
-        if (createserver) new Thread(new Server(serverPort,adminkey)).start();
-
-
+        if (createServer) {
+            new Thread(new Server(serverPort, adminKey)).start();
+        }
 
         try {
-
-            Thread.sleep(1000);
-            this.connect(adminkey);
+            Thread.sleep(1000); // laisse le serveur démarrer
+            connect(adminKey);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
 
-
-
-
-
-        new Thread(PongClientApp.client).start();
+        new Thread(this).start();
     }
 
-    // Méthode pour obtenir l'instance unique
-    public static synchronized Client getInstance(String serverHost, Integer serverPort, String adminKey, boolean createServer) throws IOException {
+    public static synchronized Client getInstance(String host, int port, String adminKey, boolean createServer) {
         if (instance == null) {
-            instance = new Client(serverHost, serverPort, adminKey,createServer);
+            instance = new Client(host, port, adminKey, createServer);
         }
         return instance;
     }
 
-    @Override
-    public void run(){
-
-        try {
-
-
-            String message;
-            while ((message = in.readLine()) != null && running) {
-                this.processServerReponse(message);
-            }
-
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        Logger.log("Arret de l'ecouteur",Logger.LogType.INFO,"CLIENT");
-
-    }
-
-    private GameMessage findMessageByCmd(String cmd) {
-        for (GameMessage msg : channelResponse) {
-            if (msg.getCmd().equals(cmd)) {
-                return msg; // trouvé
-            }
-        }
-        return null; // pas trouvé
-    }
-
-
-    public void send(GameMessage msg) {
-        if (out != null) {
-            out.println(msg.toJSONObject());
-        }
-    }
-
-
-    private void processServerReponse(String rawMessage){
-        GameMessage deserializedMessage = null;
-
-        try {
-            JSONObject jsonMsg = new JSONObject(rawMessage);
-            String cmd = jsonMsg.getString("cmd");
-
-            switch (cmd){
-                case ShutdownMessage.CMD:
-
-                    deserializedMessage = new ShutdownMessage(jsonMsg,this.id);
-                    deserializedMessage.log("CLIENT");
-
-
-                    this.running = false;
-                    return;
-                case QuitMessage.CMD:
-                    deserializedMessage = new ShutdownMessage(jsonMsg,this.id);
-                    deserializedMessage.log("CLIENT");
-
-
-                    this.running = false;
-                default:
-                    Logger.log("Commande client inconnue: " + cmd + " de Serveur ", Logger.LogType.WARNING, "SERVER");
-
-                    return;
-            }
-
-        } catch (JSONException e) {
-            Logger.log("Erreur JSON lors du traitement du message de Serveur : " + e.getMessage() + " | Brut: " + rawMessage, Logger.LogType.ERROR, "CLIENT");
-        } catch (Exception e) { // Pour attraper toute autre erreur non prévue
-            Logger.log("Erreur inattendue en traitant le message de Serveur : " + e.getMessage(), Logger.LogType.ERROR, "CLIENT");
-            e.printStackTrace();
-        }
-    }
-
-
-
     private void connect(String adminKey) throws IOException {
         socket = new Socket(serverHost, serverPort);
-        this.running = true;
+        out = new ObjectOutputStream(socket.getOutputStream());
+        in = new ObjectInputStream(socket.getInputStream());
+        running = true;
 
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this.out = new PrintWriter(socket.getOutputStream(), true); // auto-flush
+        // Envoi de la connexion
+        GameMessage<ConnectData> connectMsg = new GameMessage<>(CommandMessage.CONNECT, -1,
+                "Demande de connexion", new ConnectData(adminKey, 0));
+        send(connectMsg);
 
-        this.send(new ConnectMessage(adminKey));
-
-        ConnectMessage connect = new ConnectMessage(new JSONObject(in.readLine()),-1);
-        this.id = connect.getId();
-        System.out.println(this.id);
-        this.nbconnectedserver = connect.getNbconnected();
-        connect.log("CLIENT");
-
+        // Lecture de la réponse de connexion
+        try {
+            @SuppressWarnings("unchecked")
+            GameMessage<ConnectData> resp = (GameMessage<ConnectData>) in.readObject();
+            this.id = resp.getId();
+            this.admin = resp.getData().getAdminKey().equals(adminKey);
+            Logger.log("Connecté avec ID=" + id + " nbConnected=" + resp.getData().getNbConnected(),
+                    Logger.LogType.INFO, "CLIENT");
+        } catch (ClassNotFoundException e) {
+            throw new IOException("Type de message inconnu", e);
+        }
     }
 
+    @Override
+    public void run() {
+        try {
+            while (running) {
+                @SuppressWarnings("unchecked")
+                GameMessage<?> msg = (GameMessage<?>) in.readObject();
+                Logger.log("Message reçu: " + msg.getCmd(), Logger.LogType.DEBUG, "CLIENT");
+                if (msg.getCmd() == CommandMessage.SHUTDOWN) {
+                    shutdown();
+                } else if (msg.getCmd() == CommandMessage.QUIT) {
+                    shutdown();
+                } else if (msg.getCmd() == CommandMessage.START_GAME){
 
-
-
-
-    public boolean quit(){
-        GameMessage message;
-        if (this.admin){
-            message = new ShutdownMessage(this.id,"Déconnection de l'admin");
-        } else {
-            message = new QuitMessage(this.id,"Déconnection demandé");
-        }
-
-        this.send(message);
-
-        while (running){
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                } else {
+                    responses.offer(msg);
+                }
             }
+        } catch (IOException | ClassNotFoundException e) {
+            Logger.log("Erreur réception: " + e.getMessage(), Logger.LogType.ERROR, "CLIENT");
+            shutdown();
         }
+    }
 
+    public void send(GameMessage<?> msg) {
+        try {
+            out.writeObject(msg);
+            out.flush();
+            Logger.log("Message envoyé: " + msg.getCmd(), Logger.LogType.DEBUG, "CLIENT");
+        } catch (IOException e) {
+            Logger.log("Erreur envoi: " + e.getMessage(), Logger.LogType.ERROR, "CLIENT");
+            shutdown();
+        }
+    }
+
+    private void shutdown() {
+        running = false;
+        try {
+            socket.close();
+        } catch (IOException ignored) {}
+        Logger.log("Client arrêté", Logger.LogType.INFO, "CLIENT");
+    }
+
+    public boolean quit() {
+        GameMessage<?> msg;
+        if (admin) {
+            msg = new GameMessage<>(CommandMessage.SHUTDOWN, id, "Déconnexion admin", null);
+        } else {
+            msg = new GameMessage<>(CommandMessage.QUIT, id, "Déconnexion", null);
+        }
+        send(msg);
+        Client.instance = null;
         return true;
     }
 
-    public int getId(){
-        return this.id;
+    public int getId() {
+        return id;
     }
 
+    public GameMessage<?> pollResponse() {
+        return responses.poll();
+    }
 }

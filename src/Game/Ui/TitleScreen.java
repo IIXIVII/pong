@@ -83,18 +83,10 @@ public class TitleScreen extends BaseScreen {
     }
 
     private void onHostButtonPressed() {
-        try {
-            PongClientApp.client = Client.getInstance("localhost",8085,"daz",true);
+        PongClientApp.client = Client.getInstance("localhost",8085,"daz",true);
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
     private void onJoinButtonPressed() {
-        try {
-            PongClientApp.client= Client.getInstance(this.ipAddressField.getText(),8085,"",false);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        PongClientApp.client= Client.getInstance(this.ipAddressField.getText(),8085,"",false);
     }
 }
