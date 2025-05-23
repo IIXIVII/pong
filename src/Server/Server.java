@@ -29,10 +29,11 @@ public class Server implements Runnable {
 
     private GameLogic gameLogic;
 
-
     public Server(int port, String adminKey) {
         this.port = port;
         this.adminKey = adminKey;
+        this.gameLogic = new GameLogic();
+        this.gameState = new GameStateDto();
     }
 
     @Override
@@ -119,10 +120,7 @@ public class Server implements Runnable {
             }
             case START_GAME -> {
                 this.gameLogic =  new GameLogic(this);
-                broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", this.gameLogic.getGameState(), GameStatus.WELCOME));
-            }
-            case UPDATE_GAME_STATE -> {
-                this.responses.offer(msg);
+                broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", this.gameLogic.getGameState()));
             }
 
             default -> Logger.log("Commande inconnue: " + msg.getCmd(), Logger.LogType.WARNING, "SERVER");

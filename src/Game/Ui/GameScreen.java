@@ -1,5 +1,6 @@
 package Game.Ui;
 
+import Common.GameStateDto;
 import Game.PongClientApp;
 import Game.Ui.Style.*;
 
@@ -80,17 +81,17 @@ public class GameScreen extends BaseScreen {
         g2d.setStroke(new BasicStroke(1.5f));
         g2d.draw(centerCircle);
 
-        int paddleOffset = 50;
+        int paddleOffset = UiStyle.PADDLE_WIDTH;
         // Raquette Joueur 1
         g2d.fillRect(paddleOffset, currentLocalState.player1Y, UiStyle.PADDLE_WIDTH, UiStyle.PADDLE_HEIGHT);
         // Raquette Joueur 2
         g2d.fillRect(UiStyle.WINDOW_DIMENSION.width - paddleOffset - UiStyle.PADDLE_WIDTH, currentLocalState.player2Y, UiStyle.PADDLE_WIDTH, UiStyle.PADDLE_HEIGHT);
 
         // Balle(s)
-        // TODO
-
-        // Obstacle
-        // TODO
+        for (GameStateDto.BallPosition ball : currentLocalState.balls) {
+            g2d.setColor(Color.WHITE); // Ou UiStyle
+            g2d.fillOval(ball.x, ball.y, UiStyle.BALL_DIAMETER, UiStyle.BALL_DIAMETER);
+        }
 
         // Scores (Drawn directly)
         Font scoreFont = UiStyle.FONT_TITLE;
