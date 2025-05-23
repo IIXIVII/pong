@@ -1,27 +1,25 @@
 package Common;
-import Game.Ui.Style.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+// Etat du jeu
 public class GameStateDto implements Serializable {
-    public int winningScore = 3;
-
-    // État du jeu
+    // Position des paddles en Y
     public int player1Y;
     public int player2Y;
-
+    // Score des joueurs
     public int scorePlayer1;
     public int scorePlayer2;
 
+    public int connectedPlayers;
 
     public String message; // Pour afficher des infos (e.g., "Waiting for Player 2", "Player 1 Wins!")
-    public int connectedPlayers = 0;
-    public boolean canStartGame = false; // Si le bouton "Play" / "Start" doit être activé
     public LocalDateTime StartTargetTime ;
 
+    // Liste des positions des balles
     public List<BallPosition> balls;
     public static class BallPosition implements Serializable {
         private static final long serialVersionUID = 2L;
@@ -32,9 +30,8 @@ public class GameStateDto implements Serializable {
     public GameStateDto() {
         // Initialisation par défaut
         this.balls = new ArrayList<>();
-        player1Y = UiStyle.WINDOW_DIMENSION.height / 2 - UiStyle.PADDLE_HEIGHT / 2;
-        player2Y = UiStyle.WINDOW_DIMENSION.height / 2 - UiStyle.PADDLE_HEIGHT / 2;
-
+        this.player1Y = GameConfig.SCREEN_HEIGHT / 2 - GameConfig.PADDLE_HEIGHT / 2;
+        this.player2Y = GameConfig.SCREEN_HEIGHT / 2 - GameConfig.PADDLE_HEIGHT / 2;
     }
 
 

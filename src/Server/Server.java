@@ -24,7 +24,7 @@ public class Server implements Runnable {
     private ServerSocket serverSocket;
     private final List<ClientHandler> clients = new ArrayList<>();
     private volatile boolean running = false;
-
+    private GameStateDto gameState;
     private final BlockingQueue<GameMessage<?>> responses = new LinkedBlockingQueue<>();
 
     private GameLogic gameLogic;
@@ -119,8 +119,7 @@ public class Server implements Runnable {
                 if (client.isAdmin()) shutdownServer();
             }
             case START_GAME -> {
-                this.gameLogic =  new GameLogic(this);
-                broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", this.gameLogic.getGameState()));
+                //broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", this.gameLogic.getGameState()));
             }
 
             default -> Logger.log("Commande inconnue: " + msg.getCmd(), Logger.LogType.WARNING, "SERVER");
