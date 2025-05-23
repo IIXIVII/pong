@@ -14,6 +14,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 
 public class Server implements Runnable {
@@ -23,7 +25,10 @@ public class Server implements Runnable {
     private final List<ClientHandler> clients = new ArrayList<>();
     private volatile boolean running = false;
 
+    private final BlockingQueue<GameMessage<?>> responses = new LinkedBlockingQueue<>();
+
     private GameLogic gameLogic;
+
 
     public Server(int port, String adminKey) {
         this.port = port;
@@ -115,6 +120,9 @@ public class Server implements Runnable {
             case START_GAME -> {
                 this.gameLogic =  new GameLogic(this);
                 broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", this.gameLogic.getGameState(), GameStatus.WELCOME));
+            }
+            case UPDATE_GAME_STATE -> {
+                this.responses.offer(msg);
             }
 
             default -> Logger.log("Commande inconnue: " + msg.getCmd(), Logger.LogType.WARNING, "SERVER");
