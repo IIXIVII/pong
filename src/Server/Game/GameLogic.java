@@ -1,5 +1,6 @@
 package Server.Game;
-
+import static Common.GameConfig.*;
+import Common.GameConfig;
 import Common.GameStateDto;
 import Common.GameStatus;
 import Game.Ui.Style.UiStyle;
@@ -22,12 +23,9 @@ public class GameLogic {
     private Paddle player2Paddle;
 
     public GameLogic(){
-
         this.balls = new ArrayList<>();
         this.player1Paddle = new Paddle(1);
         this.player2Paddle = new Paddle(2);
-
-
     }
 
     public void initializeNewGame(GameStateDto state) {
@@ -38,14 +36,13 @@ public class GameLogic {
         addBall();
 
         state.message = "Partie en cours!";
-        state.currentStatus = GameStatus.PLAYING;
         syncEntitiesToDTO(state);
     }
 
     public void addBall() {
         Ball newBall = new Ball(
-                UiStyle.WINDOW_DIMENSION.width / 2 - UiStyle.BALL_DIAMETER / 2,
-                UiStyle.WINDOW_DIMENSION.height/ 2 - UiStyle.BALL_DIAMETER / 2
+                SCREEN_WIDTH / 2 - BALL_DIAMETER / 2,
+                SCREEN_HEIGHT / 2 - BALL_DIAMETER / 2
         );
         balls.add(newBall);
     }
@@ -75,19 +72,19 @@ public class GameLogic {
             ball.move();
 
             // Collisions avec les murs haut/bas
-            if (ball.y <= 0 || ball.y >= UiStyle.WINDOW_DIMENSION.height - UiStyle.BALL_DIAMETER) {
+            if (ball.y <= 0 || ball.y >= SCREEN_HEIGHT - BALL_DIAMETER) {
                 ball.reverseY();
-                ball.y = Math.max(0, Math.min(ball.y, UiStyle.WINDOW_DIMENSION.height - UiStyle.BALL_DIAMETER));
+                ball.y = Math.max(0, Math.min(ball.y, SCREEN_HEIGHT - BALL_DIAMETER));
             }
 
             Rectangle ballBounds = ball.getBounds();
 
             // Collisions paddles
             if (ballBounds.intersects(player1Paddle.getBounds())) {
-                ball.x = player1Paddle.getX() + UiStyle.BALL_DIAMETER; // Ajustement pour éviter de coller
+                ball.x = player1Paddle.getX() + BALL_DIAMETER; // Ajustement pour éviter de coller
                 ball.reverseX();
             } else if (ballBounds.intersects(player2Paddle.getBounds())) {
-                ball.x = player2Paddle.getX() - UiStyle.BALL_DIAMETER; // Ajustement
+                ball.x = player2Paddle.getX() - BALL_DIAMETER; // Ajustement
                 ball.reverseX();
             }
 
@@ -95,7 +92,7 @@ public class GameLogic {
             if (ball.x <= 0) {
                 state.scorePlayer2++;
                 ball.outOfPlay = true; // Marquer pour suppression et réinitialisation
-            } else if (ball.x >= UiStyle.WINDOW_DIMENSION.width - UiStyle.BALL_DIAMETER) {
+            } else if (ball.x >= SCREEN_WIDTH - BALL_DIAMETER) {
                 state.scorePlayer1++;
                 ball.outOfPlay = true;
             }
@@ -109,11 +106,9 @@ public class GameLogic {
         }
 
         // Vérifier condition de victoire
-        if (state.scorePlayer1 >= gameState.winningScore) {
-            state.currentStatus = GameStatus.GAME_OVER;
+        if (state.scorePlayer1 >= WINNING_SCORE) {
             state.message = "Le Joueur 1 a gagné !";
-        } else if (state.scorePlayer2 >= gameState.winningScore) {
-            state.currentStatus = GameStatus.GAME_OVER;
+        } else if (state.scorePlayer2 >= WINNING_SCORE) {
             state.message = "Le Joueur 2 a gagné !";
         }
 
