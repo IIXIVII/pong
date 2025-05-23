@@ -1,6 +1,7 @@
 // Refactored Server.java
 package Server;
 
+import Common.GameStateDto;
 import Common.Messages.CommandMessage;
 import Common.Messages.ConnectData;
 import Common.Messages.GameMessage;
@@ -22,10 +23,13 @@ public class Server implements Runnable {
     private volatile boolean running = false;
 
     private GameLogic gameLogic;
+    private GameStateDto gameState;
 
     public Server(int port, String adminKey) {
         this.port = port;
         this.adminKey = adminKey;
+        this.gameLogic = new GameLogic();
+        this.gameState = new GameStateDto();
     }
 
     @Override
@@ -92,8 +96,7 @@ public class Server implements Runnable {
                 if (client.isAdmin()) shutdownServer();
             }
             case START_GAME -> {
-                this.gameLogic =  new GameLogic(this);
-                broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", this.gameLogic.getGameState()));
+                //broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", this.gameLogic.getGameState()));
             }
 
             default -> Logger.log("Commande inconnue: " + msg.getCmd(), Logger.LogType.WARNING, "SERVER");
