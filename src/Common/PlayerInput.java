@@ -16,4 +16,7 @@ public class PlayerInput implements Serializable {
         this.type = type;
         this.playerId = playerId;
     }
+
+    @Override
+    public String toString() { return "PlayerInput: " + type.toString() + ", player id:" + playerId; }
 }

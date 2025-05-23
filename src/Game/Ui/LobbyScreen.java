@@ -39,7 +39,7 @@ public class LobbyScreen extends BaseScreen {
 
         startGameButton = new JButton("START GAME");
         UiStyle.styleButton(startGameButton);
-        startGameButton.addActionListener(e -> app.switchToScreen(ScreenName.GAME));
+        startGameButton.addActionListener(e -> onstartGameButtonPressed());
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(20, 80, 10, 80); // Wider buttons
         add(startGameButton, gbc);
@@ -53,6 +53,10 @@ public class LobbyScreen extends BaseScreen {
         gbc.insets = new Insets(10, 80, 20, 80);
         add(backButton, gbc);
     }
+    public void onstartGameButtonPressed(){
+        app.client.startGame();
+    }
+
     public void onbackButtonPressed(){
         app.client.quit();
         app.switchToScreen(ScreenName.TITLE);

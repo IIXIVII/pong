@@ -1,5 +1,6 @@
 package Game;
 
+import Common.GameConfig.*;
 import Common.GameStateDto;
 import Common.Messages.GameMessage;
 import Common.Tools.Logger;
@@ -10,9 +11,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import static Common.GameConfig.SERVER_TPS;
 import static Game.Ui.ScreenName.*;
 
 
@@ -25,9 +28,9 @@ public class PongClientApp {
     private Screen currentScreenName;
     public Client client;
 
+    private GameStateDto gameState = new GameStateDto();
     private Timer gameLoopTimer;
-    private final int FPS = 60;
-    private final int FRAME_TIME_MS = 1000 / FPS;
+
 
     public PongClientApp() {
         screens = new HashMap<>();
@@ -77,8 +80,45 @@ public class PongClientApp {
             cardLayout.show(mainPanel, screenName.toString());
             currentScreenName.getPanel().requestFocusInWindow();
 
-            if (currentScreenName instanceof GameScreen || currentScreenName instanceof LobbyScreen ) {
+            if (currentScreenName instanceof GameScreen ) {
+                LocalDateTime now = LocalDateTime.now();
+
+                if (this.gameState.StartTargetTime == null) {
+                    Logger.log("StartTargetTime est null, lancement direct du jeu.", Logger.LogType.ERROR, "CLIENTAPP");
+                    startGameLoop();
+                    return;
+                }
+
+                long totalMillis = java.time.Duration.between(now, this.gameState.StartTargetTime).toMillis();
+
+                if (totalMillis <= 0) {
+                    startGameLoop(); // déjà en retard, on commence directement
+                    return;
+                }
+
+                final int[] countdownSeconds = {(int) (totalMillis / 1000)};  // Convertir millisecondes en secondes
+
+                Logger.log("Début du compte à rebours : " + countdownSeconds[0] + "s", Logger.LogType.INFO, "CLIENTAPP");
+
+                Timer countdownTimer = new Timer(1000, null);
+
+                countdownTimer.addActionListener(e -> {
+                    if (countdownSeconds[0] > 0) {
+                        System.out.println("Début dans " + countdownSeconds[0] + "s");
+                        countdownSeconds[0]--;
+                    } else {
+                        countdownTimer.stop();
+                        System.out.println("GO !");
+                        startGameLoop();
+                    }
+                });
+
+                countdownTimer.start();
+
+            } else if (currentScreenName instanceof LobbyScreen ) {
+
                 startGameLoop();
+
             } else {
                 stopGameLoop();
             }
@@ -88,7 +128,7 @@ public class PongClientApp {
     }
 
     private void startGameLoop() {
-        gameLoopTimer = new Timer(FRAME_TIME_MS, e -> handleServerUpdate());
+        gameLoopTimer = new Timer(SERVER_TPS, e -> handleServerUpdate());
         Logger.log("Client Prepare la loop",Logger.LogType.DEBUG,"CLIENTAPP");
         gameLoopTimer.start();
         Logger.log("Client execute la loop",Logger.LogType.DEBUG,"CLIENTAPP");
@@ -109,8 +149,6 @@ public class PongClientApp {
 
     // Callback pour les mises à jour du serveur
     private void handleServerUpdate() {
-
-        boolean receivedUpdate = false;
 
 
         GameMessage<?> msg = client.pollResponse();
@@ -133,13 +171,19 @@ public class PongClientApp {
 
             // Mettre à jour les données de chaque écran
             if (finalMsg1 != null && finalMsg1.getData() instanceof GameStateDto) {
-                GameStateDto newState = (GameStateDto) finalMsg1.getData(); // Cast après vérification
+                GameStateDto newState = (GameStateDto) finalMsg1.getData();
 
-                    finalMsg1.log("CLIENTAPP");
-                    for (Screen screen : screens.values()) {
-                        screen.updateState(newState, finalMsg1.currentStatus);
-                    }
+                // DEBUG: Log the received state
+                Logger.log("Received GameState - StartTargetTime: " + newState.StartTargetTime, Logger.LogType.DEBUG, "CLIENTAPP");
+                Logger.log("Received GameState - Full: " + newState.toString(), Logger.LogType.DEBUG, "CLIENTAPP");
+
+                gameState = newState;
+                finalMsg1.log("CLIENTAPP");
+
+                for (Screen screen : screens.values()) {
+                    screen.updateState(newState, finalMsg1.currentStatus);
                 }
+            }
 
 
 
@@ -157,6 +201,7 @@ public class PongClientApp {
                     switchToScreen(LOBBY);
                     break;
                 case PLAYING:
+
                     switchToScreen(GAME);
                     break;
                 case GAME_OVER:

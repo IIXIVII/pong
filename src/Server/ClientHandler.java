@@ -24,6 +24,8 @@ public class ClientHandler implements Runnable {
         this.server = server;
         this.out = new ObjectOutputStream(socket.getOutputStream());
         this.in = new ObjectInputStream(socket.getInputStream());
+        this.id=this.server.getNbClient();
+
     }
 
     @Override
@@ -60,7 +62,7 @@ public class ClientHandler implements Runnable {
     }
 
     public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+
     public boolean isAdmin() { return isAdmin; }
     public void setAdmin(boolean admin) { isAdmin = admin; }
 }

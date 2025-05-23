@@ -4,7 +4,7 @@ public final class GameConfig {
     private GameConfig() {}
 
     // --- Dimensions de l'écran et des éléments ---
-    public static final int SCREEN_WIDTH = 800;
+    public static final int SCREEN_WIDTH = 1000;
     public static final int SCREEN_HEIGHT = 600;
 
     public static final int PADDLE_WIDTH = 20;
@@ -15,12 +15,12 @@ public final class GameConfig {
 
     // --- Paramètres de Jeu ---
     public static final int WINNING_SCORE = 3;
-    public static final int PADDLE_SPEED = 15;
+    public static final int PADDLE_SPEED = 25;
     public static final int MAX_BALLS = 3;
-    public static final int INITIAL_BALL_SPEED = 6;
+    public static final int INITIAL_BALL_SPEED = 4;
 
     // --- Paramètres Serveur et Client ---
-    public static final double SERVER_TPS = 60.0; // Ticks par seconde pour la logique serveur
+    public static final int SERVER_TPS = 60; // Ticks par seconde pour la logique serveur
     public static final String DEFAULT_SERVER_HOST = "localhost";
     public static final int DEFAULT_SERVER_PORT = 8085; // Port serveur
 

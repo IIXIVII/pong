@@ -1,6 +1,10 @@
 package Game.Ui;
 import static Common.GameConfig.*;
 import Common.GameStateDto;
+import Common.GameStatus;
+import Common.Messages.CommandMessage;
+import Common.Messages.GameMessage;
+import Common.PlayerInput;
 import Game.PongClientApp;
 import Game.Ui.Style.*;
 
@@ -25,19 +29,19 @@ public class GameScreen extends BaseScreen {
     }
 
     private void handleKeyPress(int keyCode) {
-        //TODO Gérer les input avec le serveur
-        //if (currentLocalState == null || gameClient.getPlayerID() == 0) return;
-       /* int myPlayerID = gameClient.getPlayerID();
+
         PlayerInput.InputType input = null;
 
-        if ((myPlayerID == 1 && keyCode == KeyEvent.VK_Z) || (myPlayerID == 2 && keyCode == KeyEvent.VK_UP)) {
+        if (keyCode == KeyEvent.VK_UP) {
             input = PlayerInput.InputType.MOVE_UP;
-        } else if ((myPlayerID == 1 && keyCode == KeyEvent.VK_S) || (myPlayerID == 2 && keyCode == KeyEvent.VK_DOWN)) {
+        } else if (keyCode == KeyEvent.VK_DOWN) {
             input = PlayerInput.InputType.MOVE_DOWN;
+        }
+
 
         if (input != null) {
-           gameClient.sendInput(input);
-        }*/
+           app.client.send(new GameMessage<>(CommandMessage.ACTION_PLAYER,app.client.getId(),"", new PlayerInput(input, this.app.client.getId()), GameStatus.PLAYING));
+        }
     }
 
 
