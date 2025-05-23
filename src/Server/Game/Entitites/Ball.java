@@ -1,38 +1,34 @@
 package Server.Game.Entitites;
 
+import Common.GameConfig;
+
 import java.awt.Rectangle;
 import java.util.Random;
 
 public class Ball {
     public int x, y, dx, dy;
-    private final int diameter;
-    private final int initialSpeedMagnitude;
     private Random random = new Random();
     public boolean outOfPlay = false; // Marqueur pour suppression
 
     public Ball(int startX, int startY) {
         this.x = startX;
         this.y = startY;
-        this.diameter = 30;
-        this.initialSpeedMagnitude = 10;
         resetSpeed();
     }
 
+
     public void resetSpeed() {
-        outOfPlay = false;
-        // Logique de vitesse initiale améliorée pour éviter dx ou dy trop faible
-        double angle = random.nextDouble() * Math.PI / 2 - Math.PI / 4; // Angle entre -45 et 45 deg
-        if (random.nextBoolean()) angle += Math.PI; // Direction gauche ou droite
+        double angle = random.nextDouble() * Math.PI / 2 - Math.PI / 4;
+        if (random.nextBoolean()) angle += Math.PI;
 
-        dx = (int) (initialSpeedMagnitude * Math.cos(angle));
-        dy = (int) (initialSpeedMagnitude * Math.sin(angle));
+        dx = (int) (GameConfig.INITIAL_BALL_SPEED * Math.cos(angle));
+        dy = (int) (GameConfig.INITIAL_BALL_SPEED * Math.sin(angle));
 
-        // S'assurer qu'il y a un mouvement significatif sur les deux axes
-        if (Math.abs(dx) < initialSpeedMagnitude / 3) {
-            dx = (dx > 0 ? 1 : -1) * (initialSpeedMagnitude / 3 + 1);
+        if (Math.abs(dx) < GameConfig.INITIAL_BALL_SPEED / 3) {
+            dx = (dx > 0 ? 1 : -1) * (GameConfig.INITIAL_BALL_SPEED / 3 + 1);
         }
-        if (Math.abs(dy) < initialSpeedMagnitude / 3 && initialSpeedMagnitude > 2) {
-            dy = (dy > 0 ? 1 : -1) * (initialSpeedMagnitude / 3);
+        if (Math.abs(dy) < GameConfig.INITIAL_BALL_SPEED / 3 && GameConfig.INITIAL_BALL_SPEED > 2) {
+            dy = (dy > 0 ? 1 : -1) * (GameConfig.INITIAL_BALL_SPEED / 3);
         } else if (Math.abs(dy) == 0) {
             dy = (random.nextBoolean() ? 1 : -1);
         }
@@ -52,6 +48,6 @@ public class Ball {
     }
 
     public Rectangle getBounds() {
-        return new Rectangle(x, y, diameter, diameter);
+        return new Rectangle(x, y, GameConfig.BALL_DIAMETER, GameConfig.BALL_DIAMETER);
     }
 }

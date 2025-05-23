@@ -4,13 +4,6 @@ import javax.swing.*;
 import java.awt.*;
 
 public class UiStyle {
-
-    public static final Dimension WINDOW_DIMENSION = new Dimension(1000, 800);
-    // PADDLE_DIMENSION is good, but we'll also use separate width/height constants in GameScreen for clarity
-    public static final int PADDLE_WIDTH = 20;
-    public static final int PADDLE_HEIGHT = 100;
-    public static final int BALL_DIAMETER = 20; // Added for consistency
-
     public static final Color BACKGROUND_COLOR = new Color(10, 25, 10);
     public static final Color DEFAULT_COLOR = new Color(30, 255, 30);
     public static final Color ACCENT_COLOR = new Color(80, 255, 80);

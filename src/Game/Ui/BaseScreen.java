@@ -1,5 +1,6 @@
 package Game.Ui;
 
+import Common.GameConfig;
 import Common.GameStateDto;
 import Common.GameStatus;
 import Game.Ui.Style.*;
@@ -52,7 +53,7 @@ abstract class BaseScreen extends JPanel implements Screen{
     }
     @Override
     public Dimension getPreferredSize() {
-        return UiStyle.WINDOW_DIMENSION;
+        return new Dimension(GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT);
     }
 
 
