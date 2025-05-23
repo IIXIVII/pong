@@ -19,6 +19,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 
 public class Server implements Runnable {
+    private final GameStateDto gameState;
     private String adminKey;
     private final int port;
     private ServerSocket serverSocket;
@@ -119,8 +120,8 @@ public class Server implements Runnable {
                 if (client.isAdmin()) shutdownServer();
             }
             case START_GAME -> {
-                this.gameLogic =  new GameLogic(this);
-                broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", this.gameLogic.getGameState()));
+                this.gameLogic =  new GameLogic();
+                broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence",GameStatus.PLAYING));
             }
 
             default -> Logger.log("Commande inconnue: " + msg.getCmd(), Logger.LogType.WARNING, "SERVER");

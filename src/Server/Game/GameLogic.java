@@ -38,7 +38,7 @@ public class GameLogic {
         addBall();
 
         state.message = "Partie en cours!";
-        state.currentStatus = GameStatus.PLAYING;
+
         syncEntitiesToDTO(state);
     }
 
@@ -110,10 +110,10 @@ public class GameLogic {
 
         // Vérifier condition de victoire
         if (state.scorePlayer1 >= gameState.winningScore) {
-            state.currentStatus = GameStatus.GAME_OVER;
+
             state.message = "Le Joueur 1 a gagné !";
         } else if (state.scorePlayer2 >= gameState.winningScore) {
-            state.currentStatus = GameStatus.GAME_OVER;
+
             state.message = "Le Joueur 2 a gagné !";
         }
 

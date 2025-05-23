@@ -18,7 +18,7 @@ public class GameMessage<T extends Serializable> implements Serializable {
 
     public GameStatus currentStatus;
 
-    public GameMessage() { /* constructeur sans-arg pour sérialisation */ }
+    public GameMessage(CommandMessage startGame, int i, String leJeuCommence, GameStatus playing) { /* constructeur sans-arg pour sérialisation */ }
 
     public GameMessage(CommandMessage cmd, int id, String message, T data, GameStatus status) {
         if (cmd == null) throw new IllegalArgumentException("cmd ne peut pas être null");
