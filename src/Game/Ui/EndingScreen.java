@@ -67,10 +67,11 @@ public class EndingScreen extends BaseScreen {
 
 
         private void requestReplayAction (ActionEvent e){
-            app.switchToScreen(ScreenName.GAME);
+            app.client.startGame();
         }
 
         private void requestMenuAction (ActionEvent e){
+            app.client.quit();
             app.switchToScreen(ScreenName.TITLE);
         }
 }

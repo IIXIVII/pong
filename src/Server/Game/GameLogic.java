@@ -118,20 +118,25 @@ public class GameLogic implements Runnable{
             addBall();
         }
 
+        GameMessage message;
         // Vérifier condition de victoire
 
         if (this.gameState.scorePlayer1 >= WINNING_SCORE) {
             this.gameState.message = "Le Joueur 1 a gagné !";
             this.gameState.gameStatus = GAME_OVER;
+            message = new GameMessage<>(CommandMessage.GAME_OVER,-2,"",new GameStateDto(this.gameState), GAME_OVER);
         } else if (this.gameState.scorePlayer2 >= WINNING_SCORE) {
             this.gameState.message = "Le Joueur 2 a gagné !";
             this.gameState.gameStatus = GAME_OVER;
+            message = new GameMessage<>(CommandMessage.GAME_OVER,-2,"",new GameStateDto(this.gameState), GAME_OVER);
+        } else {
+            message = new GameMessage<>(CommandMessage.UPDATE_GAME_STATE,-2,"",new GameStateDto(this.gameState), PLAYING);
         }
 
         // Mettre à jour le DTO avec les positions des balles et des paddles
         syncEntitiesToDTO();
-        this.server.broadcast(new GameMessage<>(CommandMessage.UPDATE_GAME_STATE,-2,"",new GameStateDto(this.gameState), PLAYING));
-        Logger.log("lol.", Logger.LogType.INFO, "Game");
+        this.server.broadcast(message);
+        Logger.log("Update game", Logger.LogType.INFO, "Game");
     }
 
     @Override

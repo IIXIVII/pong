@@ -9,5 +9,6 @@ public enum CommandMessage {
     START_GAME,
     UPDATE_GAME_STATE,
     ACTION_PLAYER,
+    GAME_OVER
     // … ajoute ici tes autres commandes
 }

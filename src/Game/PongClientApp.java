@@ -34,7 +34,7 @@ public class PongClientApp {
 
     public PongClientApp() {
         screens = new HashMap<>();
-        GameMessage.debug = true;
+
 
         frame = new JFrame("PONG");
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
