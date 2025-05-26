@@ -1,5 +1,6 @@
 package Game.Ui;
 
+import Common.GameConfig;
 import Game.PongClientApp;
 import Game.Ui.Style.UiStyle;
 
@@ -8,14 +9,10 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 public class EndingScreen extends BaseScreen {
     private JLabel titleLabel;
-    private JLabel winnerLabel;
+    private JLabel winnerMessageLabel;
     private JLabel finalScoreLabel; // New JLabel for the final score
     private JButton replayButton;
     private JButton menuButton;
-
-    private String displayWinnerMessage = "The winner is Player";
-    private String displayFinalScore = "Score: 0 - 0";
-    private boolean displayCanReplay = false;
 
     public EndingScreen(ScreenName screenName, PongClientApp app) {
         super(screenName, app);
@@ -26,26 +23,25 @@ public class EndingScreen extends BaseScreen {
         gbc.anchor = GridBagConstraints.CENTER;
 
         titleLabel = new JLabel("GAME OVER");
-        UiStyle.styleLabel(titleLabel, UiStyle.FONT_TITLE , UiStyle.DEFAULT_COLOR);
+        UiStyle.styleLabel(titleLabel, UiStyle.FONT_TITLE, UiStyle.DEFAULT_COLOR);
         add(titleLabel, gbc);
 
-        winnerLabel = new JLabel(displayWinnerMessage); // Initial text
-        UiStyle.styleLabel(winnerLabel, UiStyle.FONT_SUBTITLE, UiStyle.ACCENT_COLOR);
-        add(winnerLabel, gbc);
+        winnerMessageLabel = new JLabel("Determining winner..."); // Placeholder
+        UiStyle.styleLabel(winnerMessageLabel, UiStyle.FONT_SUBTITLE, UiStyle.ACCENT_COLOR);
+        add(winnerMessageLabel, gbc);
 
-        finalScoreLabel = new JLabel(displayFinalScore);
+        finalScoreLabel = new JLabel("Score: 0 - 0"); // Placeholder
         UiStyle.styleLabel(finalScoreLabel, UiStyle.FONT_LABEL, UiStyle.DEFAULT_COLOR);
         add(finalScoreLabel, gbc);
-
 
         replayButton = new JButton("Replay");
         UiStyle.styleButton(replayButton);
         replayButton.addActionListener(this::requestReplayAction);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(20, 100, 10, 100); // Wider buttons
+        gbc.insets = new Insets(20, 100, 10, 100);
         add(replayButton, gbc);
 
-        menuButton = new JButton("Menu");
+        menuButton = new JButton("Back to Menu");
         UiStyle.styleButton(menuButton);
         menuButton.addActionListener(this::requestMenuAction);
         gbc.insets = new Insets(10, 100, 20, 100);
@@ -53,16 +49,26 @@ public class EndingScreen extends BaseScreen {
     }
         @Override
         public void onShow () {
-            super.onShow();
-            String winner = currentLocalState.scorePlayer1 > currentLocalState.scorePlayer2 ? "1" : "2";
-            this.displayWinnerMessage += winner;
-            this.displayFinalScore = "Final Score: " + currentLocalState.scorePlayer1 + " - " + currentLocalState.scorePlayer2;
-            this.displayCanReplay = app.client.getHost();
+            if (currentLocalState != null) {
+                String winnerText;
+                if (currentLocalState.scorePlayer1 >= GameConfig.WINNING_SCORE) {
+                    winnerText = "Player 1 Wins!";
+                } else if (currentLocalState.scorePlayer2 >= GameConfig.WINNING_SCORE) {
+                    winnerText = "Player 2 Wins!";
+                } else {
+                    winnerText = "Match Ended"; // Fallback if scores don't clearly indicate a winner
+                }
+                winnerMessageLabel.setText(winnerText);
+                finalScoreLabel.setText("Final Score: " + currentLocalState.scorePlayer1 + " - " + currentLocalState.scorePlayer2);
 
-            winnerLabel.setText(displayWinnerMessage);
-            finalScoreLabel.setText(displayFinalScore);
-            replayButton.setEnabled(displayCanReplay);
-            repaint();
+                // Only host can initiate a replay
+                replayButton.setEnabled(app.client.getHost());
+            } else {
+                winnerMessageLabel.setText("Error: Game state unavailable.");
+                finalScoreLabel.setText("Score: -");
+                replayButton.setEnabled(false);
+            }
+            super.onShow();
         }
 
 
@@ -70,7 +76,7 @@ public class EndingScreen extends BaseScreen {
             app.client.startGame();
         }
 
-        private void requestMenuAction (ActionEvent e){
+        private void requestMenuAction (ActionEvent e) {
             app.client.quit();
             app.switchToScreen(ScreenName.TITLE);
         }

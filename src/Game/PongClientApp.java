@@ -78,7 +78,7 @@ public class PongClientApp {
 
         if (currentScreenName != null) {
             cardLayout.show(mainPanel, screenName.toString());
-            currentScreenName.getPanel().requestFocusInWindow();
+            currentScreenName.onShow();
 
             if (currentScreenName instanceof GameScreen ) {
                 LocalDateTime now = LocalDateTime.now();

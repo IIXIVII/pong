@@ -1,5 +1,6 @@
 package Game.Ui;
 
+import Common.GameConfig;
 import Common.GameStateDto;
 import Common.GameStatus;
 import Game.Client;
@@ -8,12 +9,12 @@ import Game.Ui.Style.UiStyle;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 
 public class TitleScreen extends BaseScreen {
     private JButton hostButton;
     private JButton joinButton;
-    private JTextField ipAddressField; // For join IP, styled for terminal
-    private JLabel messageLabel;
+    private JTextField ipAddressField;
 
     public TitleScreen(ScreenName screenName, PongClientApp app) {
         super(screenName, app);
@@ -34,17 +35,10 @@ public class TitleScreen extends BaseScreen {
         UiStyle.styleLabel(titlePart2, UiStyle.FONT_SUBTITLE, UiStyle.ACCENT_COLOR);
         add(titlePart2, gbc);
 
-        messageLabel = new JLabel(" ", SwingConstants.CENTER); // Espace pour les messages
-        UiStyle.styleLabel(messageLabel, UiStyle.FONT_PRIMARY, UiStyle.DEFAULT_COLOR);
-        add(messageLabel, gbc);
-
         // HOST button
         hostButton = new JButton("HOST GAME");
         UiStyle.styleButton(hostButton);
-        hostButton.addActionListener(e -> {
-            this.onHostButtonPressed();
-            app.switchToScreen(ScreenName.LOBBY);
-        });
+        hostButton.addActionListener(this::onHostButtonPressed);
         gbc.insets = new Insets(10, 50, 10, 50);
         add(hostButton, gbc);
 
@@ -57,34 +51,18 @@ public class TitleScreen extends BaseScreen {
         // JOIN Button
         joinButton = new JButton("JOIN");
         UiStyle.styleButton(joinButton);
-        joinButton.addActionListener(e -> {
-            this.onJoinButtonPressed();
-            app.switchToScreen(ScreenName.LOBBY);
-        });
+        joinButton.addActionListener(this::onJoinButtonPressed);
         gbc.insets = new Insets(0, 50, 20, 50);
         add(joinButton, gbc);
     }
 
-    @Override
-    public void updateState(GameStateDto newState,GameStatus currentStatus) {
-        super.updateState(newState, currentStatus); // Met à jour currentLocalState et repaint
-        if (currentStatus == GameStatus.CONNECTING) {
-            messageLabel.setText(newState.message);
-            hostButton.setEnabled(false);
-            joinButton.setEnabled(false);
-        } else if (currentStatus == GameStatus.WELCOME || currentStatus == GameStatus.ERROR) {
-            messageLabel.setText(newState.message != null ? newState.message : " ");
-            hostButton.setEnabled(true);
-            joinButton.setEnabled(true);
-        } else {
-            messageLabel.setText(" "); // Vider si on est dans un autre état (normalement géré par changement d'écran)
-        }
+    private void onHostButtonPressed(ActionEvent e) {
+        app.client = Client.getInstance(app, GameConfig.DEFAULT_SERVER_HOST, GameConfig.DEFAULT_SERVER_PORT, "SUPER_SECRET_ADMIN_KEY", true);
+        app.switchToScreen(ScreenName.LOBBY);
     }
 
-    private void onHostButtonPressed() {
-        app.client = Client.getInstance(this.app,"localhost",8085,"daz",true);
-    }
-    private void onJoinButtonPressed() {
-        app.client = Client.getInstance(this.app,this.ipAddressField.getText(),8085,"",false);
+    private void onJoinButtonPressed(ActionEvent e) {
+        app.client = Client.getInstance(this.app, this.ipAddressField.getText(),GameConfig.DEFAULT_SERVER_PORT,"",false);
+        app.switchToScreen(ScreenName.LOBBY);
     }
 }

@@ -7,7 +7,8 @@ import java.util.Random;
 
 public class Ball {
     public int x, y, dx, dy;
-    private Random random = new Random();
+    private static final Random RANDOM = new Random();
+    private static final double MAX_ANGLE = Math.PI / 4; // 45°
     public boolean outOfPlay = false; // Marqueur pour suppression
 
     public Ball(int startX, int startY) {
@@ -18,20 +19,16 @@ public class Ball {
 
 
     public void resetSpeed() {
-        double angle = random.nextDouble() * Math.PI / 2 - Math.PI / 4;
-        if (random.nextBoolean()) angle += Math.PI;
+        // Choix d'un quadrant (gauche ou droite)
+        double baseAngle = RANDOM.nextBoolean() ? 0 : Math.PI;
+        // Déviation entre -45° et +45°
+        double angle = baseAngle + (RANDOM.nextDouble() * 2 - 1) * MAX_ANGLE;
 
-        dx = (int) (GameConfig.INITIAL_BALL_SPEED * Math.cos(angle));
-        dy = (int) (GameConfig.INITIAL_BALL_SPEED * Math.sin(angle));
+        dx = (int) Math.round(GameConfig.INITIAL_BALL_SPEED * Math.cos(angle));
+        dy = (int) Math.round(GameConfig.INITIAL_BALL_SPEED * Math.sin(angle));
 
-        if (Math.abs(dx) < GameConfig.INITIAL_BALL_SPEED / 3) {
-            dx = (dx > 0 ? 1 : -1) * (GameConfig.INITIAL_BALL_SPEED / 3 + 1);
-        }
-        if (Math.abs(dy) < GameConfig.INITIAL_BALL_SPEED / 3 && GameConfig.INITIAL_BALL_SPEED > 2) {
-            dy = (dy > 0 ? 1 : -1) * (GameConfig.INITIAL_BALL_SPEED / 3);
-        } else if (Math.abs(dy) == 0) {
-            dy = (random.nextBoolean() ? 1 : -1);
-        }
+        // S'assurer que dx ne soit pas nul
+        if (dx == 0) dx = baseAngle == 0 ? 1 : -1;
     }
 
     public void move() {
@@ -45,6 +42,38 @@ public class Ball {
 
     public void reverseY() {
         dy *= -1;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public void setX(int x) {
+        this.x = x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public void setY(int y) {
+        this.y = y;
+    }
+
+    public int getDx() {
+        return dx;
+    }
+
+    public void setDx(int dx) {
+        this.dx = dx;
+    }
+
+    public int getDy() {
+        return dy;
+    }
+
+    public void setDy(int dy) {
+        this.dy = dy;
     }
 
     public Rectangle getBounds() {

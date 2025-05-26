@@ -43,7 +43,6 @@ public class GameLogic implements Runnable{
         player2Paddle.resetPosition();
         addBall();
 
-
         this.gameState.message = "Partie en cours!";
         this.server = server;
 
@@ -93,12 +92,13 @@ public class GameLogic implements Runnable{
             Rectangle ballBounds = ball.getBounds();
 
             // Collisions paddles
+            // Vérifier collision avec le paddle du joueur 1
             if (ballBounds.intersects(player1Paddle.getBounds())) {
-                ball.x = player1Paddle.getX() + BALL_DIAMETER; // Ajustement pour éviter de coller
-                ball.reverseX();
-            } else if (ballBounds.intersects(player2Paddle.getBounds())) {
-                ball.x = player2Paddle.getX() - BALL_DIAMETER; // Ajustement
-                ball.reverseX();
+                applyPaddleImpact(ball, player1Paddle);
+            }
+            // Vérifier collision avec le paddle du joueur 2
+            else if (ballBounds.intersects(player2Paddle.getBounds())) {
+                applyPaddleImpact(ball, player2Paddle);
             }
 
             // Point marqué
@@ -137,6 +137,30 @@ public class GameLogic implements Runnable{
         syncEntitiesToDTO();
         this.server.broadcast(message);
         Logger.log("Update game", Logger.LogType.INFO, "Game");
+    }
+
+    /**
+     * Applique l'inversion de direction et modifie dy selon le point d'impact.
+     */
+    private void applyPaddleImpact(Ball ball, Paddle paddle) {
+        // Inversion de la direction X
+        ball.reverseX();
+
+        // Calcul du décalage vertical entre la balle et le centre du paddle
+        int paddleCenterY = paddle.getY() + GameConfig.PADDLE_HEIGHT / 2;
+        int ballCenterY   = ball.getY() + GameConfig.BALL_DIAMETER / 2;
+        int deltaY = ballCenterY - paddleCenterY;
+
+        // Normalisation dans [-1, +1]
+        double factor = (double) deltaY / ((double) GameConfig.PADDLE_HEIGHT / 2);
+
+        // Ajustement de dy pour dévier la trajectoire
+        int speed = GameConfig.INITIAL_BALL_SPEED;
+        ball.setDy((int) (speed * factor));
+
+        // Réajustement de dx pour conserver la même magnitude et optionnellement accélérer
+        int signX = ball.getDx() > 0 ? 1 : -1;
+        ball.setDx(signX * speed);
     }
 
     @Override

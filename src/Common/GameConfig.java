@@ -14,10 +14,10 @@ public final class GameConfig {
     public static final int BALL_DIAMETER = 20;
 
     // --- Paramètres de Jeu ---
-    public static final int WINNING_SCORE = 3;
+    public static final int WINNING_SCORE = 5;
     public static final int PADDLE_SPEED = 25;
     public static final int MAX_BALLS = 3;
-    public static final int INITIAL_BALL_SPEED = 4;
+    public static final int INITIAL_BALL_SPEED = 5;
 
     // --- Paramètres Serveur et Client ---
     public static final int SERVER_TPS = 60; // Ticks par seconde pour la logique serveur
