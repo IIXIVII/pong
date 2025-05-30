@@ -8,7 +8,7 @@ import Game.PongClientApp;
 import javax.swing.*;
 import java.awt.*;
 
-abstract class BaseScreen extends JPanel implements Screen{
+public abstract class BaseScreen extends JPanel implements Screen{
     protected PongClientApp app;
     private final ScreenName screenName;
     protected GameStateDto currentLocalState;
@@ -25,14 +25,12 @@ abstract class BaseScreen extends JPanel implements Screen{
     @Override
     public ScreenName getScreenName() {return screenName;};
     public JPanel getPanel() {
-        return this; // This class itself is the JPanel
+        return this;
     }
 
     @Override
     public void onShow() {
         repaint();
-        // System.out.println(getName() + " is now visible. Requesting focus...");
-        SwingUtilities.invokeLater(this::requestFocusInWindow);
     }
     @Override
     public void onHide() {
@@ -45,9 +43,10 @@ abstract class BaseScreen extends JPanel implements Screen{
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     }
     @Override
-    public void updateState(GameStateDto newState, GameStatus currentStatus) {
+    public void updateState(GameStateDto newState) {
         this.currentLocalState = newState;
         repaint(); // Redessiner avec le nouvel état
     }

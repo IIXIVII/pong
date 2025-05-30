@@ -104,6 +104,7 @@ public class Client implements Runnable {
     }
 
     public GameMessage process(GameMessage msg){
+        msg.log("client");
         switch (msg.getCmd()) {
             case CONNECT:
                 Logger.log("passage au lobby",Logger.LogType.INFO,"CLIENT");
@@ -162,6 +163,12 @@ public class Client implements Runnable {
         send(msg);
         Client.instance = null;
         return true;
+    }
+
+    public void startGame() {
+       GameMessage<?> msg = new GameMessage<>(CommandMessage.START_GAME, id, "Début de la partie", null,GameStatus.PLAYING);
+       send(msg);
+
     }
 
     public int getId() {
