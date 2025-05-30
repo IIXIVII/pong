@@ -1,7 +1,9 @@
-package Game.Ui;
+package Game.Ui.Screens;
 
 import Common.GameConfig;
 import Game.PongClientApp;
+import Game.Ui.BaseScreen;
+import Game.Ui.ScreenName;
 import Game.Ui.Style.UiStyle;
 
 import javax.swing.*;

@@ -41,6 +41,7 @@ public class GameLogic implements Runnable{
         this.gameState.scorePlayer2 = 0;
         player1Paddle.resetPosition();
         player2Paddle.resetPosition();
+        this.balls.clear();
         addBall();
 
         this.gameState.message = "Partie en cours!";

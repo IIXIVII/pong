@@ -1,4 +1,4 @@
-package Game.Ui;
+package Game.Ui.Screens;
 import static Common.GameConfig.*;
 import Common.GameStateDto;
 import Common.GameStatus;
@@ -6,15 +6,14 @@ import Common.Messages.CommandMessage;
 import Common.Messages.GameMessage;
 import Common.PlayerInput;
 import Game.PongClientApp;
+import Game.Ui.BaseScreen;
+import Game.Ui.ScreenName;
 import Game.Ui.Style.*;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Ellipse2D;
-import java.time.Duration;
-import java.time.LocalDateTime;
 
 
 public class GameScreen extends BaseScreen {

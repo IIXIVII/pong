@@ -1,10 +1,10 @@
-package Game.Ui;
+package Game.Ui.Screens;
 
 import Common.GameConfig;
-import Common.GameStateDto;
-import Common.GameStatus;
 import Game.Client;
 import Game.PongClientApp;
+import Game.Ui.BaseScreen;
+import Game.Ui.ScreenName;
 import Game.Ui.Style.UiStyle;
 
 import javax.swing.*;
@@ -26,7 +26,7 @@ public class TitleScreen extends BaseScreen {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.CENTER;
 
-        // Title
+        // Titre
         JLabel titlePart1 = new JLabel("Pong", SwingConstants.CENTER);
         UiStyle.styleLabel(titlePart1, UiStyle.FONT_TITLE, UiStyle.DEFAULT_COLOR);
         add(titlePart1, gbc);
@@ -35,20 +35,20 @@ public class TitleScreen extends BaseScreen {
         UiStyle.styleLabel(titlePart2, UiStyle.FONT_SUBTITLE, UiStyle.ACCENT_COLOR);
         add(titlePart2, gbc);
 
-        // HOST button
+        // Bouton Host
         hostButton = new JButton("HOST GAME");
         UiStyle.styleButton(hostButton);
         hostButton.addActionListener(this::onHostButtonPressed);
         gbc.insets = new Insets(10, 50, 10, 50);
         add(hostButton, gbc);
 
-        // IP Address TextField
+        // Champ de texte Ip Adress
         ipAddressField = new JTextField("localhost");
         UiStyle.styleTextField(ipAddressField);
         gbc.insets = new Insets(10, 50, 0, 50);
         add(ipAddressField, gbc);
 
-        // JOIN Button
+        // Bouton Join
         joinButton = new JButton("JOIN");
         UiStyle.styleButton(joinButton);
         joinButton.addActionListener(this::onJoinButtonPressed);

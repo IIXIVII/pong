@@ -1,8 +1,9 @@
-package Game.Ui;
+package Game.Ui.Screens;
 
 import Common.GameStateDto;
-import Common.GameStatus;
 import Game.PongClientApp;
+import Game.Ui.BaseScreen;
+import Game.Ui.ScreenName;
 import Game.Ui.Style.UiStyle;
 
 import javax.swing.*;
@@ -59,13 +60,12 @@ public class LobbyScreen extends BaseScreen {
 
     public void onbackButtonPressed(){
         app.client.quit();
-        app.switchToScreen(ScreenName.TITLE);
     }
 
 
     @Override
-    public void updateState(GameStateDto newState, GameStatus currentStatus) {
-        super.updateState(newState, currentStatus); // Met à jour currentLocalState + repaint
+    public void updateState(GameStateDto newState) {
+        super.updateState(newState); // Met à jour currentLocalState + repaint
 
         // Nombre de joueurs
         int playersConnected = newState.connectedPlayers; // ou newState.playerNames.size();

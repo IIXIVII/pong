@@ -5,6 +5,10 @@ import Common.GameStateDto;
 import Common.Messages.GameMessage;
 import Common.Tools.Logger;
 import Game.Ui.*;
+import Game.Ui.Screens.EndingScreen;
+import Game.Ui.Screens.GameScreen;
+import Game.Ui.Screens.LobbyScreen;
+import Game.Ui.Screens.TitleScreen;
 import Game.Ui.Style.UiStyle;
 
 import javax.swing.*;
@@ -22,10 +26,7 @@ import static Game.Ui.ScreenName.*;
 
 public class PongClientApp {
     private JFrame frame;
-    private CardLayout cardLayout;
-    private JPanel mainPanel;
-    private Map<ScreenName, Screen> screens;
-    private Screen currentScreenName;
+    public ScreenManager screenManager;
     public Client client;
 
     private GameStateDto gameState = new GameStateDto();
@@ -33,97 +34,82 @@ public class PongClientApp {
 
 
     public PongClientApp() {
-        screens = new HashMap<>();
-
-
         frame = new JFrame("PONG");
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                client.quit();
+                if (client != null) {
+                    client.quit();
+                }
                 System.out.println("Application closing.");
                 frame.dispose();
                 System.exit(0);
             }
         });
 
-        cardLayout = new CardLayout();
-        mainPanel = new JPanel(cardLayout);
-        mainPanel.setBackground(UiStyle.BACKGROUND_COLOR);
+        this.screenManager = new ScreenManager(frame);
+        initializeAllScreens();
 
-        // Initialize and add all screens
-        addScreen(new TitleScreen(TITLE, this));
-        addScreen(new LobbyScreen(LOBBY, this));
-        addScreen(new GameScreen(GAME, this));
-        addScreen(new EndingScreen(ENDING, this));
-
-        frame.add(mainPanel);
         frame.setResizable(false);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        // Show the initial screen
-        switchToScreen(TITLE);
+        this.screenManager.switchTo(TITLE);
     }
 
-    private void addScreen(Screen screen) {
-        screens.put(screen.getScreenName(), screen);
-        mainPanel.add(screen.getScreenName().toString(), screen.getPanel());
+    private void initializeAllScreens() {
+        screenManager.register(new TitleScreen(ScreenName.TITLE, this));
+        screenManager.register(new LobbyScreen(ScreenName.LOBBY, this));
+        screenManager.register(new GameScreen(ScreenName.GAME, this));
+        screenManager.register(new EndingScreen(ScreenName.ENDING, this));
     }
 
     public void switchToScreen(ScreenName screenName) {
-        currentScreenName = this.screens.get(screenName);
+        this.screenManager.switchTo(screenName);
+        Screen currentScreen = this.screenManager.getCurrentScreen();
+        if (currentScreen instanceof GameScreen ) {
+            LocalDateTime now = LocalDateTime.now();
 
-        if (currentScreenName != null) {
-            cardLayout.show(mainPanel, screenName.toString());
-            currentScreenName.onShow();
-
-            if (currentScreenName instanceof GameScreen ) {
-                LocalDateTime now = LocalDateTime.now();
-
-                if (this.gameState.StartTargetTime == null) {
-                    Logger.log("StartTargetTime est null, lancement direct du jeu.", Logger.LogType.ERROR, "CLIENTAPP");
-                    startGameLoop();
-                    return;
-                }
-
-                long totalMillis = java.time.Duration.between(now, this.gameState.StartTargetTime).toMillis();
-
-                if (totalMillis <= 0) {
-                    startGameLoop(); // déjà en retard, on commence directement
-                    return;
-                }
-
-                final int[] countdownSeconds = {(int) (totalMillis / 1000)};  // Convertir millisecondes en secondes
-
-                Logger.log("Début du compte à rebours : " + countdownSeconds[0] + "s", Logger.LogType.INFO, "CLIENTAPP");
-
-                Timer countdownTimer = new Timer(1000, null);
-
-                countdownTimer.addActionListener(e -> {
-                    if (countdownSeconds[0] > 0) {
-                        System.out.println("Début dans " + countdownSeconds[0] + "s");
-                        countdownSeconds[0]--;
-                    } else {
-                        countdownTimer.stop();
-                        System.out.println("GO !");
-                        startGameLoop();
-                    }
-                });
-
-                countdownTimer.start();
-
-            } else if (currentScreenName instanceof LobbyScreen ) {
-
+            if (this.gameState.StartTargetTime == null) {
+                Logger.log("StartTargetTime est null, lancement direct du jeu.", Logger.LogType.ERROR, "CLIENTAPP");
                 startGameLoop();
-
-            } else {
-                stopGameLoop();
+                return;
             }
+
+            long totalMillis = java.time.Duration.between(now, this.gameState.StartTargetTime).toMillis();
+
+            if (totalMillis <= 0) {
+                startGameLoop(); // déjà en retard, on commence directement
+                return;
+            }
+
+            final int[] countdownSeconds = {(int) (totalMillis / 1000)};  // Convertir millisecondes en secondes
+
+            Logger.log("Début du compte à rebours : " + countdownSeconds[0] + "s", Logger.LogType.INFO, "CLIENTAPP");
+
+            Timer countdownTimer = new Timer(1000, null);
+
+            countdownTimer.addActionListener(e -> {
+                if (countdownSeconds[0] > 0) {
+                    System.out.println("Début dans " + countdownSeconds[0] + "s");
+                    countdownSeconds[0]--;
+                } else {
+                    countdownTimer.stop();
+                    System.out.println("GO !");
+                    startGameLoop();
+                }
+            });
+
+            countdownTimer.start();
+
+        } else if (currentScreen instanceof LobbyScreen ) {
+
+            startGameLoop();
+
         } else {
-            System.err.println("Error: Screen with name '" + screenName + "' not found.");
+            stopGameLoop();
         }
     }
 
@@ -142,8 +128,8 @@ public class PongClientApp {
     }
 
     private void gameLoopTick() {
-        if (currentScreenName instanceof GameScreen) {
-            ((GameScreen) currentScreenName).tick();
+        if (screenManager.getCurrentScreen() instanceof GameScreen) {
+            ((GameScreen) screenManager.getCurrentScreen()).tick();
         }
     }
 
@@ -180,15 +166,8 @@ public class PongClientApp {
                 gameState = newState;
                 finalMsg1.log("CLIENTAPP");
 
-                for (Screen screen : screens.values()) {
-                    screen.updateState(newState, finalMsg1.currentStatus);
-                }
+                screenManager.updateScreens(gameState);
             }
-
-
-
-
-
 
             if (finalMsg1 != null){
             // Changer d'écran en fonction du nouvel état du jeu
@@ -215,8 +194,6 @@ public class PongClientApp {
             }}
         });
     }
-
-
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(PongClientApp::new);

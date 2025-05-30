@@ -17,8 +17,7 @@ import java.net.Socket;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 
 
 public class Server implements Runnable {
@@ -134,31 +133,24 @@ public class Server implements Runnable {
 
                 this.broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", gameStateCopy, GameStatus.PLAYING));
 
-                long totalMillis = java.time.Duration.between(this.gameState.StartTargetTime, LocalDateTime.now()).toMillis();
+                long delayMillis = java.time.Duration.between(LocalDateTime.now(), this.gameState.StartTargetTime).toMillis();
+                if (delayMillis <= 0) delayMillis = 1; // Ensure positive delay if time already passed
 
+                Logger.log("La logique de jeu démarrera dans " + delayMillis + "ms.", Logger.LogType.INFO, "SERVER");
 
-                final int[] countdownSeconds = {(int) (totalMillis / 1000)};  // Convertir millisecondes en secondes
-
-                Logger.log("Début du compte à rebours : " + countdownSeconds[0] + "s", Logger.LogType.INFO, "CLIENTAPP");
-
-                Timer countdownTimer = new Timer(1000, null);
-
-                countdownTimer.addActionListener(e -> {
-                    if (countdownSeconds[0] > 0) {
-                        System.out.println("Début dans " + countdownSeconds[0] + "s");
-                        countdownSeconds[0]--;
-                    } else {
-                        countdownTimer.stop();
-                        System.out.println("GO !");
-                        new Thread(
-                                this.gameLogic
-                        ).start();
+                ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+                scheduler.schedule(() -> {
+                    Logger.log("Compte à rebours terminé. Démarrage du thread de logique de jeu.", Logger.LogType.INFO, "SERVER");
+                    // Check if game status is still PLAYING (e.g. not cancelled by player disconnect)
+                    synchronized(gameState) {
+                        if (GameStatus.PLAYING.equals(this.gameState.gameStatus)) {
+                            new Thread(this.gameLogic).start();
+                        } else {
+                            Logger.log("Démarrage du jeu annulé, statut actuel: " + this.gameState.gameStatus, Logger.LogType.INFO, "SERVER");
+                        }
                     }
-                });
-
-                countdownTimer.start();
-
-
+                    scheduler.shutdown();
+                }, delayMillis, TimeUnit.MILLISECONDS);
             }
             case ACTION_PLAYER -> {
                 this.gameLogic.actionPlayer((PlayerInput) msg.getData());
