@@ -4,9 +4,10 @@ import java.io.Serializable;
 
 public class PlayerInput implements Serializable {
     public enum InputType {
-        MOVE_UP,
-        MOVE_DOWN,
-
+        MOVE_UP_PRESSED,
+        MOVE_UP_RELEASED,
+        MOVE_DOWN_PRESSED,
+        MOVE_DOWN_RELEASED
     }
 
     public InputType type;

@@ -11,8 +11,7 @@ import Common.Messages.GameMessage;
 import Common.PlayerInput;
 import Common.Tools.Logger;
 import Game.Ui.Style.UiStyle;
-import Server.Game.Entitites.Ball;
-import Server.Game.Entitites.Paddle;
+import Server.Game.Entitites.*;
 import Server.Server;
 
 import java.awt.*;
@@ -20,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 public class GameLogic implements Runnable{
@@ -28,29 +28,42 @@ public class GameLogic implements Runnable{
     private List<Ball> balls;
     private Paddle player1Paddle;
     private Paddle player2Paddle;
+    private List<GameObject> obstacles;
+
+    private long lastBallSpawnTime;
+    private static final Random random = ThreadLocalRandom.current();
 
     public GameLogic(){
         this.balls = new ArrayList<>();
+        this.obstacles = new ArrayList<>();
         this.player1Paddle = new Paddle(1);
         this.player2Paddle = new Paddle(2);
     }
 
     public void initializeNewGame(GameStateDto gameState, Server server) {
         this.gameState = gameState;
-        this.gameState.scorePlayer1 = 0;
-        this.gameState.scorePlayer2 = 0;
-        player1Paddle.resetPosition();
-        player2Paddle.resetPosition();
-        this.balls.clear();
-        addBall();
-
-        this.gameState.message = "Partie en cours!";
         this.server = server;
 
+        this.gameState.scorePlayer1 = 0;
+        this.gameState.scorePlayer2 = 0;
+        this.gameState.message = "Partie en cours!";
+
+        player1Paddle.resetPosition();
+        player2Paddle.resetPosition();
+
+        this.balls.clear();
+        addInitialBall();
+
+        this.obstacles.clear();
+        spawnObstacles();
+
+        this.server = server;
+
+        lastBallSpawnTime = System.currentTimeMillis();
         syncEntitiesToDTO();
     }
 
-    public void addBall() {
+    private void addInitialBall() {
         Ball newBall = new Ball(
                 SCREEN_WIDTH / 2 - BALL_DIAMETER / 2,
                 SCREEN_HEIGHT / 2 - BALL_DIAMETER / 2
@@ -58,56 +71,128 @@ public class GameLogic implements Runnable{
         balls.add(newBall);
     }
 
+    public void spawnNewBall() {
+        if (balls.size() < MAX_BALLS &&
+                (System.currentTimeMillis() - lastBallSpawnTime) > BALL_SPAWN_INTERVAL_SECONDS * 1000) {
+
+            Ball newBall = new Ball(
+                    SCREEN_WIDTH / 2 - BALL_DIAMETER / 2,
+                    SCREEN_HEIGHT / 2 - BALL_DIAMETER / 2
+            );
+            balls.add(newBall);
+            lastBallSpawnTime = System.currentTimeMillis();
+        }
+    }
+
+    private void spawnObstacles() {
+        obstacles.clear();
+        for (int i = 0; i < MAX_OBSTACLES; i++) {
+            boolean placed = false;
+            int attempts = 0;
+            while (!placed && attempts < 100) {
+                int x = random.nextInt(SCREEN_WIDTH - OBSTACLE_SIZE);
+                int y = random.nextInt(SCREEN_HEIGHT - OBSTACLE_SIZE);
+                GameObject newObstacle;
+
+                // CHoix aléatoire entre un obstacle statique ou qui se déplace
+                if (random.nextBoolean()) {
+                    newObstacle = new MovingObstacle(x,y);
+                } else {
+                    newObstacle = new Obstacle(x, y);
+                }
+
+                if (isValidObstaclePosition(newObstacle)) {
+                    obstacles.add(newObstacle);
+                    placed = true;
+                }
+                attempts++;
+            }
+        }
+    }
+
+    private boolean isValidObstaclePosition(GameObject obstacle) {
+        Rectangle obsBounds = obstacle.getBounds();
+
+        // Check distance from paddles' initial columns
+        if (obsBounds.getMaxX() > (PADDLE_OFFSET_X - OBSTACLE_MIN_DISTANCE_FROM_PADDLE) &&
+                obsBounds.x < (PADDLE_OFFSET_X + PADDLE_WIDTH + OBSTACLE_MIN_DISTANCE_FROM_PADDLE)) {
+            return false; // Too close to P1
+        }
+        if (obsBounds.getMaxX() > (SCREEN_WIDTH - PADDLE_OFFSET_X - PADDLE_WIDTH - OBSTACLE_MIN_DISTANCE_FROM_PADDLE) &&
+                obsBounds.x < (SCREEN_WIDTH - PADDLE_OFFSET_X + OBSTACLE_MIN_DISTANCE_FROM_PADDLE)) {
+            return false; // Too close to P2
+        }
+
+        // Check distance from center spawn area (horizontally)
+        int centerX = SCREEN_WIDTH / 2;
+        if (obsBounds.getMaxX() > (centerX - OBSTACLE_MIN_DISTANCE_FROM_CENTER_X) &&
+                obsBounds.x < (centerX + OBSTACLE_MIN_DISTANCE_FROM_CENTER_X)) {
+            return false; // Too close to center X
+        }
+
+        // Check for overlap with other existing obstacles
+        for (GameObject existing : obstacles) {
+            if (obsBounds.intersects(existing.getBounds())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
     private void syncEntitiesToDTO() {
         this.gameState.player1Y = player1Paddle.getY();
         this.gameState.player2Y = player2Paddle.getY();
+
         this.gameState.balls.clear();
         for (Ball ball : balls) {
-            this.gameState.balls.add(new GameStateDto.BallPosition(ball.x, ball.y));
+            this.gameState.balls.add(new GameStateDto.BallPosition(ball.getX(), ball.getY()));
+        }
+
+        this.gameState.obstacles.clear();
+        for (GameObject  obstacle : obstacles) {
+            this.gameState.obstacles.add(new GameStateDto.ObstaclePosition(obstacle.getX(), obstacle.getY()));
         }
     }
 
-
-
-    public void actionPlayer(PlayerInput input){
+    public void actionPlayer(PlayerInput input) {
         Paddle paddleToMove = (input.playerId == 1) ? player1Paddle : player2Paddle;
-        if (PlayerInput.InputType.MOVE_UP.equals(input.type)) {
-            paddleToMove.moveUp();
-        } else {
-            paddleToMove.moveDown();
-        }
+        paddleToMove.handlePlayerAction(input.type);
     }
 
     public void update() {
+        player1Paddle.update();
+        player2Paddle.update();
 
+        for (GameObject obstacle : obstacles) {
+            obstacle.update();
+        }
         List<Ball> ballsToRemove = new ArrayList<>();
         for (Ball ball : balls) {
-            ball.move();
-
-            // Collisions avec les murs haut/bas
-            if (ball.y <= 0 || ball.y >= SCREEN_HEIGHT - BALL_DIAMETER) {
-                ball.reverseY();
-                ball.y = Math.max(0, Math.min(ball.y, SCREEN_HEIGHT - BALL_DIAMETER));
-            }
+            ball.update();
 
             Rectangle ballBounds = ball.getBounds();
 
-            // Collisions paddles
-            // Vérifier collision avec le paddle du joueur 1
+            // Collisions paddle
             if (ballBounds.intersects(player1Paddle.getBounds())) {
-                applyPaddleImpact(ball, player1Paddle);
+                ball.handlePaddleImpact(player1Paddle);
+            } else if (ballBounds.intersects(player2Paddle.getBounds())) {
+                ball.handlePaddleImpact(player2Paddle);
             }
-            // Vérifier collision avec le paddle du joueur 2
-            else if (ballBounds.intersects(player2Paddle.getBounds())) {
-                applyPaddleImpact(ball, player2Paddle);
+
+            // Collisions obstacle
+            for (GameObject obstacle : obstacles) {
+                if (ballBounds.intersects(obstacle.getBounds())) {
+                    ball.handleObstacleImpact(obstacle);
+                }
             }
 
             // Point marqué
-            if (ball.x <= 0) {
-                this.gameState.scorePlayer2++;
-                ball.outOfPlay = true; // Marquer pour suppression et réinitialisation
-            } else if (ball.x >= SCREEN_WIDTH - BALL_DIAMETER) {
-                this.gameState.scorePlayer1++;
+            if (ball.getX() <= 0) {
+                gameState.scorePlayer2++;
+                ball.outOfPlay = true;
+            } else if (ball.getX() + ball.getWidth() >= SCREEN_WIDTH) {
+                gameState.scorePlayer1++;
                 ball.outOfPlay = true;
             }
             if (ball.outOfPlay) ballsToRemove.add(ball);
@@ -115,53 +200,30 @@ public class GameLogic implements Runnable{
         balls.removeAll(ballsToRemove);
 
         // Si toutes les balles sont hors jeu et que la partie n'est pas finie, en ajouter une nouvelle
-        if (balls.isEmpty()) {
-            addBall();
-        }
-
-        GameMessage message;
-        // Vérifier condition de victoire
-
-        if (this.gameState.scorePlayer1 >= WINNING_SCORE) {
-            this.gameState.message = "Le Joueur 1 a gagné !";
-            this.gameState.gameStatus = GAME_OVER;
-            message = new GameMessage<>(CommandMessage.GAME_OVER,-2,"",new GameStateDto(this.gameState), GAME_OVER);
-        } else if (this.gameState.scorePlayer2 >= WINNING_SCORE) {
-            this.gameState.message = "Le Joueur 2 a gagné !";
-            this.gameState.gameStatus = GAME_OVER;
-            message = new GameMessage<>(CommandMessage.GAME_OVER,-2,"",new GameStateDto(this.gameState), GAME_OVER);
+        if (balls.isEmpty() && gameState.scorePlayer1 < WINNING_SCORE && gameState.scorePlayer2 < WINNING_SCORE) {
+            addInitialBall(); // Add one at center
+            Logger.log("All balls out, adding new initial ball.", Logger.LogType.INFO, "GAMELOGIC");
         } else {
-            message = new GameMessage<>(CommandMessage.UPDATE_GAME_STATE,-2,"",new GameStateDto(this.gameState), PLAYING);
+            // Spawn de balle basé sur un timer
+            spawnNewBall();
         }
 
-        // Mettre à jour le DTO avec les positions des balles et des paddles
-        syncEntitiesToDTO();
-        this.server.broadcast(message);
+
+        GameMessage<?> message;
+        if (gameState.scorePlayer1 >= WINNING_SCORE || gameState.scorePlayer2 >= WINNING_SCORE) {
+            gameState.message = (gameState.scorePlayer1 >= WINNING_SCORE) ? "Player 1 Wins!" : "Player 2 Wins!";
+            gameState.gameStatus = GAME_OVER;
+            message = new GameMessage<>(CommandMessage.GAME_OVER, -2, "", new GameStateDto(this.gameState), GAME_OVER);
+            Logger.log("Game Over: " + gameState.message, Logger.LogType.INFO, "GAMELOGIC");
+        } else {
+            // Mettre à jour le DTO avec les positions des balles et des paddles
+            syncEntitiesToDTO();
+            message = new GameMessage<>(CommandMessage.UPDATE_GAME_STATE, -2, "", new GameStateDto(this.gameState), PLAYING);
+        }
+
+        server.broadcast(message);
+
         Logger.log("Update game", Logger.LogType.INFO, "Game");
-    }
-
-    /**
-     * Applique l'inversion de direction et modifie dy selon le point d'impact.
-     */
-    private void applyPaddleImpact(Ball ball, Paddle paddle) {
-        // Inversion de la direction X
-        ball.reverseX();
-
-        // Calcul du décalage vertical entre la balle et le centre du paddle
-        int paddleCenterY = paddle.getY() + GameConfig.PADDLE_HEIGHT / 2;
-        int ballCenterY   = ball.getY() + GameConfig.BALL_DIAMETER / 2;
-        int deltaY = ballCenterY - paddleCenterY;
-
-        // Normalisation dans [-1, +1]
-        double factor = (double) deltaY / ((double) GameConfig.PADDLE_HEIGHT / 2);
-
-        // Ajustement de dy pour dévier la trajectoire
-        int speed = GameConfig.INITIAL_BALL_SPEED;
-        ball.setDy((int) (speed * factor));
-
-        // Réajustement de dx pour conserver la même magnitude et optionnellement accélérer
-        int signX = ball.getDx() > 0 ? 1 : -1;
-        ball.setDx(signX * speed);
     }
 
     @Override
