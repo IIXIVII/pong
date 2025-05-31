@@ -18,6 +18,9 @@ import java.awt.geom.Ellipse2D;
 
 public class GameScreen extends BaseScreen {
 
+    private boolean upArrowPressed = false;
+    private boolean downArrowPressed = false;
+
     public GameScreen(ScreenName screenName, PongClientApp app) {
         super(screenName, app);
         addKeyListener(new KeyAdapter() {
@@ -25,24 +28,53 @@ public class GameScreen extends BaseScreen {
             public void keyPressed(KeyEvent e) {
                 handleKeyPress(e.getKeyCode());
             }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                handleKeyRelease(e.getKeyCode());
+            }
         });
     }
 
     private void handleKeyPress(int keyCode) {
-        PlayerInput.InputType input = null;
+        PlayerInput.InputType inputType = null;
 
         if (keyCode == KeyEvent.VK_UP) {
-            input = PlayerInput.InputType.MOVE_UP;
+            if (!upArrowPressed) { // Send only if state changes
+                upArrowPressed = true;
+                inputType = PlayerInput.InputType.MOVE_UP_PRESSED;
+            }
         } else if (keyCode == KeyEvent.VK_DOWN) {
-            input = PlayerInput.InputType.MOVE_DOWN;
+            if (!downArrowPressed) { // Send only if state changes
+                downArrowPressed = true;
+                inputType = PlayerInput.InputType.MOVE_DOWN_PRESSED;
+            }
         }
 
-        if (input != null) {
-           app.client.send(new GameMessage<>(CommandMessage.ACTION_PLAYER,app.client.getId(),"", new PlayerInput(input, this.app.client.getId()), GameStatus.PLAYING));
+        if (inputType != null) {
+            app.client.send(new GameMessage<>(CommandMessage.ACTION_PLAYER, app.client.getId(),"", new PlayerInput(inputType, this.app.client.getId()), GameStatus.PLAYING));
         }
     }
 
+    private void handleKeyRelease(int keyCode) {
+        PlayerInput.InputType inputType = null;
 
+        if (keyCode == KeyEvent.VK_UP) {
+            if (upArrowPressed) { // Send only if state changes
+                upArrowPressed = false;
+                inputType = PlayerInput.InputType.MOVE_UP_RELEASED;
+            }
+        } else if (keyCode == KeyEvent.VK_DOWN) {
+            if (downArrowPressed) { // Send only if state changes
+                downArrowPressed = false;
+                inputType = PlayerInput.InputType.MOVE_DOWN_RELEASED;
+            }
+        }
+
+        if (inputType != null) {
+            app.client.send(new GameMessage<>(CommandMessage.ACTION_PLAYER, app.client.getId(),"", new PlayerInput(inputType, this.app.client.getId()), GameStatus.PLAYING));
+        }
+    }
 
     public void tick() {
         repaint(); // Pour l'instant, juste rafraîchir l'écran
@@ -69,6 +101,14 @@ public class GameScreen extends BaseScreen {
             for (GameStateDto.BallPosition ballPos : currentLocalState.balls) {
                 g2d.setColor(Color.WHITE); // Or a UiStyle color for ball
                 g2d.fillOval(ballPos.x, ballPos.y, BALL_DIAMETER, BALL_DIAMETER);
+            }
+        }
+
+        // Draw obstacles
+        if (currentLocalState.obstacles != null) {
+            g2d.setColor(Color.WHITE);
+            for (GameStateDto.ObstaclePosition obstacle : currentLocalState.obstacles) {
+                g2d.fillRect(obstacle.x, obstacle.y, OBSTACLE_SIZE, OBSTACLE_SIZE);
             }
         }
 

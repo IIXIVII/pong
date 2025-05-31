@@ -23,8 +23,10 @@ public class GameStateDto implements Serializable {
 
     public GameStatus gameStatus;
 
- ;   // Liste des positions des balles
+    // Liste des positions des balles
     public List<BallPosition> balls;
+    // Liste des positions des obstacles
+    public List<ObstaclePosition> obstacles;
 
     public static class BallPosition implements Serializable {
         private static final long serialVersionUID = 2L;
@@ -40,9 +42,24 @@ public class GameStateDto implements Serializable {
         }
     }
 
+    public static class ObstaclePosition implements Serializable {
+        private static final long serialVersionUID = 3L;
+        public int x, y;
+        public ObstaclePosition(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public String toString() {
+            return "ObstaclePosition{x=" + x + ", y=" + y + "}";
+        }
+    }
+
     public GameStateDto() {
-        // Initialisation par dÃ©faut
+        // Initialisation par défaut
         this.balls = new ArrayList<>();
+        this.obstacles = new ArrayList<>();
         this.player1Y = GameConfig.SCREEN_HEIGHT / 2 - GameConfig.PADDLE_HEIGHT / 2;
         this.player2Y = GameConfig.SCREEN_HEIGHT / 2 - GameConfig.PADDLE_HEIGHT / 2;
         this.message = "";
@@ -62,11 +79,17 @@ public class GameStateDto implements Serializable {
         this.message = other.message;
         this.StartTargetTime = other.StartTargetTime; // LocalDateTime is immutable, so this is safe
 
-        // Deep copy of balls list
         this.balls = new ArrayList<>();
         if (other.balls != null) {
             for (BallPosition ball : other.balls) {
                 this.balls.add(new BallPosition(ball.x, ball.y));
+            }
+        }
+
+        this.obstacles = new ArrayList<>();
+        if (other.obstacles != null) {
+            for (ObstaclePosition obstacle : other.obstacles) {
+                this.obstacles.add(new ObstaclePosition(obstacle.x, obstacle.y));
             }
         }
     }
@@ -81,7 +104,9 @@ public class GameStateDto implements Serializable {
                 ", connectedPlayers=" + connectedPlayers +
                 ", message='" + message + '\'' +
                 ", StartTargetTime=" + StartTargetTime +
+                ", gameStatus=" + gameStatus +
                 ", balls=" + balls +
+                ", obstacles=" + obstacles +
                 '}';
     }
 }
