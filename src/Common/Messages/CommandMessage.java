@@ -1,14 +1,16 @@
 package Common.Messages;
 
-
+/**
+ * Énumération des commandes possibles dans les messages serveurs.
+ * Ces commandes dictent l'action à entreprendre ou l'information transmise.
+ */
 public enum CommandMessage {
-    CONNECT,
-    INFO_SERVER,
-    SHUTDOWN,
-    QUIT,
-    START_GAME,
-    UPDATE_GAME_STATE,
-    ACTION_PLAYER,
-    GAME_OVER
-    // … ajoute ici tes autres commandes
+    CONNECT,          // Connexion au serveur
+    INFO_SERVER,      // Message d'information générique du serveur
+    SHUTDOWN,         // Déconnexion des joueurs + arrêt du serveur
+    QUIT,             // Déconnexion d'un client
+    START_GAME,       // Démarrage de la partie
+    UPDATE_GAME_STATE,// Mise à jour de l'état du jeu envoyée par le serveur
+    ACTION_PLAYER,    // Action effectuée par un joueur
+    GAME_OVER         // Notification que la partie est terminée
 }

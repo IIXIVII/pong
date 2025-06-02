@@ -1,75 +1,51 @@
 package Common;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-// Etat du jeu
+/**
+ * Data Transfer Object (DTO) représentant l'état complet du jeu à un instant T.
+ * Cet objet est sérializable pour être transmis sur le réseau.
+ */
 public class GameStateDto implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
-    // Position des paddles en Y
-    public int player1Y;
-    public int player2Y;
-    // Score des joueurs
-    public int scorePlayer1;
-    public int scorePlayer2;
+    // Positions des paddles des joueurs
+    private int player1Y;
+    private int player2Y;
+    // Scores des joueurs
+    private int scorePlayer1;
+    private int scorePlayer2;
 
-    public int connectedPlayers;
+    private int connectedPlayers;
+    private String message;
+    // Compte-à-rebours pour synchroniser les joueurs au lancement du jeu
+    private LocalDateTime startTargetTime;
+    private GameStatus gameStatus;
 
-    public String message; // Pour afficher des infos (e.g., "Waiting for Player 2", "Player 1 Wins!")
-    public LocalDateTime StartTargetTime;
+    private List<BallPosition> balls;
+    private List<ObstaclePosition> obstacles;
 
-    public GameStatus gameStatus;
-
-    // Liste des positions des balles
-    public List<BallPosition> balls;
-    // Liste des positions des obstacles
-    public List<ObstaclePosition> obstacles;
-
-    public static class BallPosition implements Serializable {
-        private static final long serialVersionUID = 2L;
-        public int x, y;
-        public BallPosition(int x, int y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        @Override
-        public String toString() {
-            return "BallPosition{x=" + x + ", y=" + y + "}";
-        }
-    }
-
-    public static class ObstaclePosition implements Serializable {
-        private static final long serialVersionUID = 3L;
-        public int x, y;
-        public ObstaclePosition(int x, int y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        @Override
-        public String toString() {
-            return "ObstaclePosition{x=" + x + ", y=" + y + "}";
-        }
-    }
-
+    /** Constructeur par défaut. Initialise l'état du jeu. */
     public GameStateDto() {
-        // Initialisation par défaut
-        this.balls = new ArrayList<>();
-        this.obstacles = new ArrayList<>();
         this.player1Y = GameConfig.SCREEN_HEIGHT / 2 - GameConfig.PADDLE_HEIGHT / 2;
         this.player2Y = GameConfig.SCREEN_HEIGHT / 2 - GameConfig.PADDLE_HEIGHT / 2;
-        this.message = "";
-        this.connectedPlayers = 0;
         this.scorePlayer1 = 0;
         this.scorePlayer2 = 0;
+        this.connectedPlayers = 0;
+        this.message = "";
+        this.startTargetTime = null;
         this.gameStatus = GameStatus.WELCOME;
+        this.balls = new ArrayList<>();
+        this.obstacles = new ArrayList<>();
     }
 
-    // Copy constructor to avoid reference issues
+    /** Constructeur de copie. Crée une copie profonde. */
     public GameStateDto(GameStateDto other) {
         this.player1Y = other.player1Y;
         this.player2Y = other.player2Y;
@@ -77,36 +53,60 @@ public class GameStateDto implements Serializable {
         this.scorePlayer2 = other.scorePlayer2;
         this.connectedPlayers = other.connectedPlayers;
         this.message = other.message;
-        this.StartTargetTime = other.StartTargetTime; // LocalDateTime is immutable, so this is safe
+        this.startTargetTime = other.startTargetTime; // LocalDateTime est immutable
+        this.gameStatus = other.gameStatus;
+        this.balls = new ArrayList<>(other.balls);
+        this.obstacles = new ArrayList<>(other.obstacles);
+    }
 
-        this.balls = new ArrayList<>();
-        if (other.balls != null) {
-            for (BallPosition ball : other.balls) {
-                this.balls.add(new BallPosition(ball.x, ball.y));
-            }
-        }
+    // Getters
+    public int getPlayer1Y() { return player1Y; }
+    public int getPlayer2Y() { return player2Y; }
+    public int getScorePlayer1() { return scorePlayer1; }
+    public int getScorePlayer2() { return scorePlayer2; }
+    public int getConnectedPlayers() { return connectedPlayers; }
+    public String getMessage() { return message; }
+    public LocalDateTime getStartTargetTime() { return startTargetTime; }
+    public GameStatus getGameStatus() { return gameStatus; }
+    public List<BallPosition> getBalls() { return new ArrayList<>(balls); } // Retourne une copie pour protéger l'encapsulation
+    public List<ObstaclePosition> getObstacles() { return new ArrayList<>(obstacles); } // Idem
 
-        this.obstacles = new ArrayList<>();
-        if (other.obstacles != null) {
-            for (ObstaclePosition obstacle : other.obstacles) {
-                this.obstacles.add(new ObstaclePosition(obstacle.x, obstacle.y));
-            }
-        }
+    // Setters
+    public void setPlayer1Y(int player1Y) { this.player1Y = player1Y; }
+    public void setPlayer2Y(int player2Y) { this.player2Y = player2Y; }
+    public void setScorePlayer1(int scorePlayer1) { this.scorePlayer1 = scorePlayer1; }
+    public void setScorePlayer2(int scorePlayer2) { this.scorePlayer2 = scorePlayer2; }
+    public void setConnectedPlayers(int connectedPlayers) { this.connectedPlayers = connectedPlayers; }
+    public void setMessage(String message) { this.message = message; }
+    public void setStartTargetTime(LocalDateTime startTargetTime) { this.startTargetTime = startTargetTime; }
+    public void setGameStatus(GameStatus gameStatus) { this.gameStatus = gameStatus; }
+    public void setBalls(List<BallPosition> balls) {
+        this.balls = (balls != null) ? new ArrayList<>(balls) : new ArrayList<>();
+    }
+    public void setObstacles(List<ObstaclePosition> obstacles) {
+        this.obstacles = (obstacles != null) ? new ArrayList<>(obstacles) : new ArrayList<>();
     }
 
     @Override
     public String toString() {
-        return "GameStateDto{" +
-                "player1Y=" + player1Y +
-                ", player2Y=" + player2Y +
-                ", scorePlayer1=" + scorePlayer1 +
-                ", scorePlayer2=" + scorePlayer2 +
-                ", connectedPlayers=" + connectedPlayers +
-                ", message='" + message + '\'' +
-                ", StartTargetTime=" + StartTargetTime +
-                ", gameStatus=" + gameStatus +
-                ", balls=" + balls +
-                ", obstacles=" + obstacles +
-                '}';
+        return String.format("GameStateDto{S1=%d,S2=%d, P=%d, Status=%s, Msg='%s', Balls=%d, Obstacles=%d, TargetTime=%s}",
+                scorePlayer1, scorePlayer2, connectedPlayers, gameStatus, message,
+                (balls != null ? balls.size() : 0),
+                (obstacles != null ? obstacles.size() : 0),
+                startTargetTime);
+    }
+
+    /**
+     * Position d'une balle (immutable).
+     */
+    public record BallPosition(int x, int y) implements Serializable {
+        @Serial private static final long serialVersionUID = 2L;
+    }
+
+    /**
+     * Position d'un obstacle (immutable).
+     */
+    public record ObstaclePosition(int x, int y) implements Serializable {
+        @Serial private static final long serialVersionUID = 3L;
     }
 }

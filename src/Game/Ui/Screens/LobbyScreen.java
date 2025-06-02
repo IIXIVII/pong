@@ -8,13 +8,16 @@ import Game.Ui.Style.UiStyle;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 
+/**
+ * Écran du lobby où les joueurs attendent le début de la partie.
+ * Affiche le nombre de joueurs connectés et permet à l'hôte de démarrer le jeu.
+ */
 public class LobbyScreen extends BaseScreen {
-    private JLabel titleLabel;
-    private JLabel statusLabel;
-    private JLabel playersLabel;
-    private JButton startGameButton;
-    private JButton backButton;
+    private final JLabel statusLabel;
+    private final JLabel playersLabel;
+    private final JButton startGameButton;
 
     public LobbyScreen(ScreenName screenName, PongClientApp app) {
         super(screenName, app);
@@ -24,63 +27,82 @@ public class LobbyScreen extends BaseScreen {
         gbc.insets = new Insets(10, 20, 10, 20);
         gbc.anchor = GridBagConstraints.CENTER;
 
-        titleLabel = new JLabel("GAME LOBBY");
+        // Titre
+        JLabel titleLabel = new JLabel("GAME LOBBY");
         UiStyle.styleLabel(titleLabel, UiStyle.FONT_TITLE, UiStyle.DEFAULT_COLOR);
         gbc.insets = new Insets(20, 20, 20, 20);
         add(titleLabel, gbc);
 
-        playersLabel = new JLabel("PLAYERS: 1/2");
+        // Joueurs connectés
+        playersLabel = new JLabel("PLAYERS: 0/2");
         UiStyle.styleLabel(playersLabel, UiStyle.FONT_SUBTITLE, UiStyle.DEFAULT_COLOR);
         gbc.insets = new Insets(10, 20, 10, 20);
         add(playersLabel, gbc);
 
+        // Statut
         statusLabel = new JLabel("Waiting for opponent...");
         UiStyle.styleLabel(statusLabel, UiStyle.FONT_LABEL, UiStyle.ACCENT_COLOR);
         add(statusLabel, gbc);
 
+        // Bouton démarrer
         startGameButton = new JButton("START GAME");
         UiStyle.styleButton(startGameButton);
-        startGameButton.addActionListener(e -> onstartGameButtonPressed());
+        startGameButton.addActionListener(this::onstartGameButtonPressed);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(20, 80, 10, 80); // Wider buttons
+        startGameButton.setEnabled(false);
+        gbc.insets = new Insets(20, 80, 10, 80);
         add(startGameButton, gbc);
 
-        backButton = new JButton("LEAVE LOBBY");
+        // Bouton quitter
+        JButton backButton = new JButton("LEAVE LOBBY");
         UiStyle.styleButton(backButton);
-        backButton.addActionListener(e -> {
-            this.onbackButtonPressed();
-        });
-        gbc.fill = GridBagConstraints.HORIZONTAL; // Make back button same width
+        backButton.addActionListener(this::onbackButtonPressed);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 80, 20, 80);
         add(backButton, gbc);
     }
-    public void onstartGameButtonPressed(){
+
+    /**
+     * Gère l'action du bouton "Démarrer Partie".
+     */
+    private void onstartGameButtonPressed(ActionEvent e) {
         app.client.startGame();
     }
 
-    public void onbackButtonPressed(){
+    /**
+     * Gère l'action du bouton "Quitter Salon".
+     * Déconnecte le client et retourne à l'écran titre.
+     */
+    private void onbackButtonPressed(ActionEvent e) {
         app.client.quit();
     }
 
+    @Override
+    public void onShow() {
+        updateUIBasedOnState(state);
+        super.onShow();
+    }
 
     @Override
     public void updateState(GameStateDto newState) {
-        super.updateState(newState); // Met à jour currentLocalState + repaint
+        super.updateState(newState);
+        updateUIBasedOnState(newState);
+    }
+
+    private void updateUIBasedOnState(GameStateDto newState) {
+        super.updateState(newState);
 
         // Nombre de joueurs
-        int playersConnected = newState.connectedPlayers; // ou newState.playerNames.size();
+        int playersConnected = newState.getConnectedPlayers();
         playersLabel.setText("PLAYERS: " + playersConnected + "/2");
-
+        if (app.client.getHost()) {
+            startGameButton.setEnabled(true);
+        }
         // Statut d'attente
         if (playersConnected < 2) {
             statusLabel.setText("Waiting for opponent...");
-            startGameButton.setEnabled(false);
         } else {
-            statusLabel.setText("Ready to start!");
-            startGameButton.setEnabled(true);
+            statusLabel.setText("Ready ! Waiting for host to start the game...");
         }
     }
-
-
-
 }

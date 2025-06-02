@@ -104,8 +104,8 @@ public class Server implements Runnable {
                         throw new RuntimeException(e);
                     }
 
-                    this.gameState.connectedPlayers = 2;
-                    this.gameState.message = "ceci ets un test car je ne comprend pas";
+                    this.gameState.setConnectedPlayers(2);
+                    this.gameState.setMessage("ceci ets un test car je ne comprend pas");
                     this.broadcast(new GameMessage<>(CommandMessage.INFO_SERVER,-2,"Connection reussie",this.gameState,GameStatus.CONNECTING));
                 }
             }
@@ -113,8 +113,8 @@ public class Server implements Runnable {
                 removeClient(client);
                 broadcast(new GameMessage<>(CommandMessage.QUIT, client.getId(), "Client déconnecté", "", GameStatus.WELCOME));
                 GameStateDto g = new GameStateDto();
-                this.gameState.connectedPlayers = 1;
-                this.gameState.message = "ceci ets un test car je ne comprend pas";
+                this.gameState.setConnectedPlayers(1);
+                this.gameState.setMessage("ceci ets un test car je ne comprend pas");
                 this.broadcast(new GameMessage<>(CommandMessage.INFO_SERVER,-2,"Connection reussie",this.gameState,GameStatus.LOBBY_WAITING));
             }
             case SHUTDOWN -> {
@@ -122,18 +122,18 @@ public class Server implements Runnable {
             }
             case START_GAME -> {
 
-                this.gameState.StartTargetTime = LocalDateTime.now().plusSeconds(4);
-                this.gameState.gameStatus = GameStatus.PLAYING;
+                this.gameState.setStartTargetTime(LocalDateTime.now().plusSeconds(4));
+                this.gameState.setGameStatus(GameStatus.PLAYING);
                 this.gameLogic.initializeNewGame(this.gameState, this);
                 // Create a copy to send to avoid reference issues
                 GameStateDto gameStateCopy = new GameStateDto(this.gameState);
 
-                Logger.log("Start time: " + gameStateCopy.StartTargetTime, Logger.LogType.INFO, "SERVER");
+                Logger.log("Start time: " + gameStateCopy.getStartTargetTime(), Logger.LogType.INFO, "SERVER");
                 Logger.log("GameState: " + gameStateCopy.toString(), Logger.LogType.DEBUG, "SERVER");
 
                 this.broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", gameStateCopy, GameStatus.PLAYING));
 
-                long delayMillis = java.time.Duration.between(LocalDateTime.now(), this.gameState.StartTargetTime).toMillis();
+                long delayMillis = java.time.Duration.between(LocalDateTime.now(), this.gameState.getStartTargetTime()).toMillis();
                 if (delayMillis <= 0) delayMillis = 1; // Ensure positive delay if time already passed
 
                 Logger.log("La logique de jeu démarrera dans " + delayMillis + "ms.", Logger.LogType.INFO, "SERVER");
@@ -143,10 +143,10 @@ public class Server implements Runnable {
                     Logger.log("Compte à rebours terminé. Démarrage du thread de logique de jeu.", Logger.LogType.INFO, "SERVER");
                     // Check if game status is still PLAYING (e.g. not cancelled by player disconnect)
                     synchronized(gameState) {
-                        if (GameStatus.PLAYING.equals(this.gameState.gameStatus)) {
+                        if (GameStatus.PLAYING.equals(this.gameState.getGameStatus())) {
                             new Thread(this.gameLogic).start();
                         } else {
-                            Logger.log("Démarrage du jeu annulé, statut actuel: " + this.gameState.gameStatus, Logger.LogType.INFO, "SERVER");
+                            Logger.log("Démarrage du jeu annulé, statut actuel: " + this.gameState.getGameStatus(), Logger.LogType.INFO, "SERVER");
                         }
                     }
                     scheduler.shutdown();
