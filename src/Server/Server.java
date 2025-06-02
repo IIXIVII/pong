@@ -1,6 +1,7 @@
 // Refactored Server.java
 package Server;
 
+import Common.GameConfig;
 import Common.GameStateDto;
 import Common.GameStatus;
 import Common.Messages.CommandMessage;
@@ -10,8 +11,7 @@ import Common.PlayerInput;
 import Common.Tools.Logger;
 import Server.Game.GameLogic;
 
-import javax.swing.*;
-import java.io.*;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.LocalDateTime;
@@ -49,13 +49,29 @@ public class Server implements Runnable {
             Logger.log("Serveur démarré sur le port " + port, Logger.LogType.SUCCESS, "SERVER");
 
             while (running) {
-                Socket socket = serverSocket.accept();
-                ClientHandler handler = new ClientHandler(socket, this);
-                synchronized (clients) {
-                    clients.add(handler);
+                Socket socket = serverSocket.accept(); // Accepte une nouvelle connexion
+                socket.setTcpNoDelay(true);
+
+
+                synchronized (clients) { // Synchronisation pour la vérification et l'ajout
+                    if (clients.size() < GameConfig.MAX_PLAYERS) {
+                        ClientHandler handler = new ClientHandler(socket, this);
+                        clients.add(handler);
+                        new Thread(handler).start();
+                        Logger.log("Nouveau client connecté: " + socket.getInetAddress() + " (" + clients.size() + "/" + GameConfig.MAX_PLAYERS + ")", Logger.LogType.SUCCESS, "SERVER");
+
+                        // Si c'est le premier client, on met à jour l'état pour indiquer l'attente
+                        if (clients.size() == 1) {
+                            gameState.connectedPlayers = 1;
+                            gameState.gameStatus = GameStatus.LOBBY_WAITING;
+                            // Pas besoin de broadcast ici, le handler enverra un message de connexion
+                        }
+                        // La logique pour le deuxième joueur est déjà dans process() -> CONNECT
+
+                    } else {
+                        Logger.log("Serveur plein (" + clients.size() + "/" + GameConfig.MAX_PLAYERS + "). Connexion refusée pour: " + socket.getInetAddress(), Logger.LogType.WARNING, "SERVER");
+                    }
                 }
-                new Thread(handler).start();
-                Logger.log("Nouveau client connecté: " + socket.getInetAddress(), Logger.LogType.SUCCESS, "SERVER");
             }
         } catch (IOException e) {
             if (running) {
@@ -63,6 +79,7 @@ public class Server implements Runnable {
             }
         }
     }
+
 
     public void shutdownServer() {
         running = false;
@@ -78,11 +95,11 @@ public class Server implements Runnable {
         } catch (IOException e) {
             Logger.log("Erreur fermeture du serveur: " + e.getMessage(), Logger.LogType.ERROR, "SERVER");
         }
-
+        Logger.log("Serveur fermé", Logger.LogType.SUCCESS, "SERVER");
     }
 
     public void process(ClientHandler client, GameMessage<?> msg) {
-        msg.log("SERVER");
+        //msg.log("SERVER");
         switch (msg.getCmd()) {
             case CONNECT -> {
                 @SuppressWarnings("unchecked")
@@ -105,17 +122,22 @@ public class Server implements Runnable {
                     }
 
                     this.gameState.connectedPlayers = 2;
-                    this.gameState.message = "ceci ets un test car je ne comprend pas";
+                    this.gameState.message = "Les deux client sont connectés !";
                     this.broadcast(new GameMessage<>(CommandMessage.INFO_SERVER,-2,"Connection reussie",this.gameState,GameStatus.CONNECTING));
                 }
             }
             case QUIT -> {
                 removeClient(client);
-                broadcast(new GameMessage<>(CommandMessage.QUIT, client.getId(), "Client déconnecté", "", GameStatus.WELCOME));
-                GameStateDto g = new GameStateDto();
-                this.gameState.connectedPlayers = 1;
-                this.gameState.message = "ceci ets un test car je ne comprend pas";
-                this.broadcast(new GameMessage<>(CommandMessage.INFO_SERVER,-2,"Connection reussie",this.gameState,GameStatus.LOBBY_WAITING));
+
+
+                GameStateDto g = new GameStateDto(this.gameState);
+                g.connectedPlayers = 1;
+                g.gameStatus = GameStatus.LOBBY_WAITING;
+                g.message = "Un joueur c'est déconnecté";
+
+                this.broadcast(new GameMessage<>(CommandMessage.INFO_SERVER,-2,"Client déconnecté",g,GameStatus.LOBBY_WAITING));
+
+
             }
             case SHUTDOWN -> {
                 if (client.isAdmin()) shutdownServer();
@@ -124,15 +146,17 @@ public class Server implements Runnable {
 
                 this.gameState.StartTargetTime = LocalDateTime.now().plusSeconds(4);
                 this.gameState.gameStatus = GameStatus.PLAYING;
+                this.gameState.playing = true;
                 this.gameLogic.initializeNewGame(this.gameState, this);
                 // Create a copy to send to avoid reference issues
                 GameStateDto gameStateCopy = new GameStateDto(this.gameState);
+                gameStateCopy.playing = true;
 
                 Logger.log("Start time: " + gameStateCopy.StartTargetTime, Logger.LogType.INFO, "SERVER");
                 Logger.log("GameState: " + gameStateCopy.toString(), Logger.LogType.DEBUG, "SERVER");
 
                 this.broadcast(new GameMessage<>(CommandMessage.START_GAME, -2, "Le jeu commence", gameStateCopy, GameStatus.PLAYING));
-
+                this.gameState.playing = true;
                 long delayMillis = java.time.Duration.between(LocalDateTime.now(), this.gameState.StartTargetTime).toMillis();
                 if (delayMillis <= 0) delayMillis = 1; // Ensure positive delay if time already passed
 
@@ -151,6 +175,7 @@ public class Server implements Runnable {
                     }
                     scheduler.shutdown();
                 }, delayMillis, TimeUnit.MILLISECONDS);
+
             }
             case ACTION_PLAYER -> {
                 this.gameLogic.actionPlayer((PlayerInput) msg.getData());
@@ -161,8 +186,8 @@ public class Server implements Runnable {
     }
 
     public void broadcast(GameMessage<?> message) {
-        Logger.log("Broadcast: " + message.getCmd(), Logger.LogType.DEBUG, "SERVER");
-        message.log("SERVER");
+        //Logger.log("Broadcast: " + message.getCmd(), Logger.LogType.DEBUG, "SERVER");
+        //message.log("SERVER");
         synchronized (clients) {
             for (ClientHandler c : clients) {
                 c.send(message);

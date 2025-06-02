@@ -1,13 +1,14 @@
 // Refactored ClientHandler.java
 package Server;
 
+import Common.Messages.CommandMessage;
 import Common.Messages.GameMessage;
 import Common.Tools.Logger;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class ClientHandler implements Runnable {
     private final Socket socket;
@@ -50,7 +51,8 @@ public class ClientHandler implements Runnable {
             out.flush();
         } catch (IOException e) {
             Logger.log("Erreur envoi message: " + e.getMessage(), Logger.LogType.ERROR, "HANDLER");
-            stop();
+            server.process(this, new GameMessage<>(CommandMessage.QUIT, this.id, "Déconnexion", null, null));
+
         }
     }
 

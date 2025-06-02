@@ -1,25 +1,22 @@
 package Server.Game;
-import static Common.GameConfig.*;
-import static Common.GameStatus.GAME_OVER;
-import static Common.GameStatus.PLAYING;
 
-import Common.GameConfig;
 import Common.GameStateDto;
-import Common.GameStatus;
 import Common.Messages.CommandMessage;
 import Common.Messages.GameMessage;
 import Common.PlayerInput;
 import Common.Tools.Logger;
-import Game.Ui.Style.UiStyle;
 import Server.Game.Entitites.*;
 import Server.Server;
 
 import java.awt.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static Common.GameConfig.*;
+import static Common.GameStatus.GAME_OVER;
+import static Common.GameStatus.PLAYING;
 
 
 public class GameLogic implements Runnable{
@@ -230,6 +227,8 @@ public class GameLogic implements Runnable{
     public void run() {
         Logger.log("Game thread started.", Logger.LogType.INFO, "Game");
         final long optimalTime = 1_000_000_000 / SERVER_TPS;
+        gameState.playing = true;
+
         while (PLAYING.equals(this.gameState.gameStatus)  ){
             long startTime = System.nanoTime();
 

@@ -60,7 +60,10 @@ public class LobbyScreen extends BaseScreen {
 
     public void onbackButtonPressed(){
         app.client.quit();
+        app.switchToScreen(ScreenName.TITLE);
+        app.screenManager.updateScreens(app.gameState);
     }
+
 
 
     @Override

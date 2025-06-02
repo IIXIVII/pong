@@ -50,9 +50,11 @@ public class Client implements Runnable {
             throw new RuntimeException(e);
         }
 
+        Logger.log("client admin ? :" + host, Logger.LogType.INFO, "CLIENT");
 
         new Thread(this).start();
     }
+
 
     public static synchronized Client getInstance(PongClientApp app,String host, int port, String adminKey, boolean createServer) {
         if (instance == null) {
@@ -63,6 +65,8 @@ public class Client implements Runnable {
 
     private void connect(String adminKey) throws IOException {
         socket = new Socket(serverHost, serverPort);
+        socket.setTcpNoDelay(true);
+
         out = new ObjectOutputStream(socket.getOutputStream());
         in = new ObjectInputStream(socket.getInputStream());
         running = true;
@@ -78,15 +82,17 @@ public class Client implements Runnable {
             @SuppressWarnings("unchecked")
             GameMessage<ConnectData> resp = (GameMessage<ConnectData>) in.readObject();
             this.id = resp.getId();
-            this.host = resp.getData().getAdminKey().equals(adminKey);
+            this.host = resp.getData().getAdminKey().equals(adminKey) && resp.getData().getAdminKey().length() != 0;
             Logger.log("Connecté avec ID=" + id + " nbConnected=" + resp.getData().getNbConnected(),
                     Logger.LogType.INFO, "CLIENT");
-
+            app.gameState.gameStatus = resp.currentStatus;
+            app.gameState.connectedPlayers = resp.getData().getNbConnected();
 
         } catch (ClassNotFoundException e) {
             throw new IOException("Type de message inconnu", e);
         }
     }
+
 
     @Override
     public void run() {
@@ -103,16 +109,22 @@ public class Client implements Runnable {
         }
     }
 
+
     public GameMessage process(GameMessage msg){
         msg.log("client");
         switch (msg.getCmd()) {
+            case UPDATE_GAME_STATE:
+                //Logger.log(app.gameState.toString(), Logger.LogType.DEBUG, "client");
+
+                break;
             case CONNECT:
                 Logger.log("passage au lobby",Logger.LogType.INFO,"CLIENT");
                 break;
             case INFO_SERVER:
-            case UPDATE_GAME_STATE:
-
+                Logger.log("ok",Logger.LogType.SUCCESS,"oihioh");
                 break;
+
+
 
             case START_GAME:
                 Logger.log("Début de la partie reçu du serveur", Logger.LogType.INFO, "CLIENT");
@@ -121,9 +133,10 @@ public class Client implements Runnable {
 
             case SHUTDOWN:
             case QUIT:
-                Logger.log("Déconnexion serveur", Logger.LogType.INFO, "CLIENT");
-                this.quit();
-                return msg;
+                Logger.log("L'autre client s'est déconnecté du serveur", Logger.LogType.INFO, "CLIENT");
+
+                break;
+
 
             // Ajoute ici d'autres cas si tu attends d'autres messages (chat, score, etc.)
 
@@ -133,6 +146,7 @@ public class Client implements Runnable {
         }
         return msg;
     }
+
 
     public void send(GameMessage<?> msg) {
         try {
@@ -160,8 +174,11 @@ public class Client implements Runnable {
         } else {
             msg = new GameMessage<>(CommandMessage.QUIT, id, "Déconnexion", null,GameStatus.WELCOME);
         }
+        app.gameState.gameStatus = GameStatus.WELCOME;
+        app.gameState.connectedPlayers = 0;
         send(msg);
         Client.instance = null;
+        Logger.log("Déconnexion du serveur, retour a l'etat normal:" + app.gameState.gameStatus, Logger.LogType.SUCCESS, "CLIENT");
         return true;
     }
 

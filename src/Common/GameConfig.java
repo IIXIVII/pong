@@ -27,10 +27,11 @@ public final class GameConfig {
     public static final int OBSTACLE_MIN_DISTANCE_FROM_CENTER_X = 100;
     public static final int OBSTACLE_MOVING_SPEED = 2;
 
-    public static final int WINNING_SCORE = 15;
+    public static final int WINNING_SCORE = 5;
 
     // --- Paramètres Serveur et Client ---
     public static final int SERVER_TPS = 60; // Ticks par seconde pour la logique serveur
     public static final String DEFAULT_SERVER_HOST = "localhost";
     public static final int DEFAULT_SERVER_PORT = 8085; // Port serveur
+    public static final int MAX_PLAYERS = 2; // Nombre maximum de joueurs
 }

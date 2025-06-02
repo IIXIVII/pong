@@ -17,6 +17,7 @@ public class GameStateDto implements Serializable {
     public int scorePlayer2;
 
     public int connectedPlayers;
+    public boolean playing;
 
     public String message; // Pour afficher des infos (e.g., "Waiting for Player 2", "Player 1 Wins!")
     public LocalDateTime StartTargetTime;
@@ -102,6 +103,7 @@ public class GameStateDto implements Serializable {
                 ", scorePlayer1=" + scorePlayer1 +
                 ", scorePlayer2=" + scorePlayer2 +
                 ", connectedPlayers=" + connectedPlayers +
+                ", playing=" + playing +
                 ", message='" + message + '\'' +
                 ", StartTargetTime=" + StartTargetTime +
                 ", gameStatus=" + gameStatus +

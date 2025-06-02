@@ -1,6 +1,7 @@
 package Game.Ui.Screens;
 
 import Common.GameConfig;
+import Common.Tools.Logger;
 import Game.Client;
 import Game.PongClientApp;
 import Game.Ui.BaseScreen;
@@ -58,11 +59,15 @@ public class TitleScreen extends BaseScreen {
 
     private void onHostButtonPressed(ActionEvent e) {
         app.client = Client.getInstance(app, GameConfig.DEFAULT_SERVER_HOST, GameConfig.DEFAULT_SERVER_PORT, "SUPER_SECRET_ADMIN_KEY", true);
+        Logger.log("jbiefz", Logger.LogType.INFO,"fezion");
         app.switchToScreen(ScreenName.LOBBY);
+        app.screenManager.updateScreens(app.gameState);
+        return;
     }
 
     private void onJoinButtonPressed(ActionEvent e) {
         app.client = Client.getInstance(this.app, this.ipAddressField.getText(),GameConfig.DEFAULT_SERVER_PORT,"",false);
         app.switchToScreen(ScreenName.LOBBY);
+        app.screenManager.updateScreens(app.gameState);
     }
 }

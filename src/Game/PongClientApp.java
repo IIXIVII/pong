@@ -1,23 +1,20 @@
 package Game;
 
-import Common.GameConfig.*;
 import Common.GameStateDto;
 import Common.Messages.GameMessage;
 import Common.Tools.Logger;
-import Game.Ui.*;
+import Game.Ui.Screen;
+import Game.Ui.ScreenManager;
+import Game.Ui.ScreenName;
 import Game.Ui.Screens.EndingScreen;
 import Game.Ui.Screens.GameScreen;
 import Game.Ui.Screens.LobbyScreen;
 import Game.Ui.Screens.TitleScreen;
-import Game.Ui.Style.UiStyle;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 import static Common.GameConfig.SERVER_TPS;
 import static Game.Ui.ScreenName.*;
@@ -28,8 +25,9 @@ public class PongClientApp {
     private JFrame frame;
     public ScreenManager screenManager;
     public Client client;
+    public boolean playingState = false;
 
-    private GameStateDto gameState = new GameStateDto();
+    public GameStateDto gameState = new GameStateDto();
     private Timer gameLoopTimer;
 
 
@@ -74,6 +72,7 @@ public class PongClientApp {
 
             if (this.gameState.StartTargetTime == null) {
                 Logger.log("StartTargetTime est null, lancement direct du jeu.", Logger.LogType.ERROR, "CLIENTAPP");
+                this.gameState.playing = true;
                 startGameLoop();
                 return;
             }
@@ -82,6 +81,9 @@ public class PongClientApp {
 
             if (totalMillis <= 0) {
                 startGameLoop(); // déjà en retard, on commence directement
+                Logger.log("1gameState.playing = " + this.gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
+                this.gameState.playing = true;
+                Logger.log("2gameState.playing = " + this.gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
                 return;
             }
 
@@ -98,11 +100,15 @@ public class PongClientApp {
                 } else {
                     countdownTimer.stop();
                     System.out.println("GO !");
+
                     startGameLoop();
                 }
             });
 
             countdownTimer.start();
+            Logger.log("1gameState.playing = " + this.gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
+            this.gameState.playing = true;
+            Logger.log("2gameState.playing = " + this.gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
 
         } else if (currentScreen instanceof LobbyScreen ) {
 
@@ -124,6 +130,7 @@ public class PongClientApp {
         if (gameLoopTimer != null) {
             Logger.log("Client arrete la loop",Logger.LogType.DEBUG,"CLIENTAPP");
             gameLoopTimer.stop();
+            playingState = false;
         }
     }
 
@@ -160,38 +167,42 @@ public class PongClientApp {
                 GameStateDto newState = (GameStateDto) finalMsg1.getData();
 
                 // DEBUG: Log the received state
-                Logger.log("Received GameState - StartTargetTime: " + newState.StartTargetTime, Logger.LogType.DEBUG, "CLIENTAPP");
-                Logger.log("Received GameState - Full: " + newState.toString(), Logger.LogType.DEBUG, "CLIENTAPP");
+                //Logger.log("Received GameState - StartTargetTime: " + newState.StartTargetTime, Logger.LogType.DEBUG, "CLIENTAPP");
+                //Logger.log("Received GameState - Full: " + newState.toString(), Logger.LogType.DEBUG, "CLIENTAPP");
 
-                gameState = newState;
-                finalMsg1.log("CLIENTAPP");
+                this.gameState = newState;
+                //finalMsg1.log("CLIENTAPP");
 
                 screenManager.updateScreens(gameState);
             }
 
-            if (finalMsg1 != null){
-            // Changer d'écran en fonction du nouvel état du jeu
-            switch (finalMsg1.currentStatus) {
-                case WELCOME: // Si le serveur nous remet en Welcome (rare)
-                    switchToScreen(TITLE);
-                    break;
-                case LOBBY_WAITING:
-                case LOBBY_READY_TO_START:
-                    switchToScreen(LOBBY);
-                    break;
-                case PLAYING:
+            //if (finalMsg1 != null) if (finalMsg1.currentStatus == GameStatus.PLAYING) Logger.log(finalMsg1.getData().toString(), Logger.LogType.INFO, "CLIENTAPPLLLLLLLLLLLLLLL");
 
-                    switchToScreen(GAME);
-                    break;
-                case GAME_OVER:
-                    switchToScreen(ENDING);
-                    break;
-                default:
-                    // Si on est en CONNECTING, on reste sur l'écran actuel (Welcome ou Lobby)
-                    // jusqu'à ce que le serveur confirme un nouvel état.
-                    // Le WelcomeScreen gère l'affichage de "Connecting..."
-                    break;
-            }}
+            if (finalMsg1 != null){
+                // Changer d'écran en fonction du nouvel état du jeu
+                switch (finalMsg1.currentStatus) {
+                    case WELCOME: // Si le serveur nous remet en Welcome (rare)
+                        switchToScreen(TITLE);
+                        break;
+                    case LOBBY_WAITING:
+                    case LOBBY_READY_TO_START:
+                        switchToScreen(LOBBY);
+                        break;
+                    case PLAYING:
+                        if (!playingState){
+                            playingState= true;
+                            switchToScreen(GAME);
+                        }
+                        break;
+                    case GAME_OVER:
+                        switchToScreen(ENDING);
+                        break;
+                    default:
+                        // Si on est en CONNECTING, on reste sur l'écran actuel (Welcome ou Lobby)
+                        // jusqu'à ce que le serveur confirme un nouvel état.
+                        // Le WelcomeScreen gère l'affichage de "Connecting..."
+                        break;
+                }}
         });
     }
 
