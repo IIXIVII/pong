@@ -1,13 +1,20 @@
 package Common;
 
+import java.io.Serial;
 import java.io.Serializable;
 
+/**
+ * Représente une action effectuée par un joueur. Immutable.
+ */
 public class PlayerInput implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    // Enumération des types d'entrées du joueur
     public enum InputType {
-        MOVE_UP_PRESSED,
-        MOVE_UP_RELEASED,
-        MOVE_DOWN_PRESSED,
-        MOVE_DOWN_RELEASED
+        MOVE_UP,
+        MOVE_DOWN,
+        STOP_MOVE,
     }
 
     public InputType type;

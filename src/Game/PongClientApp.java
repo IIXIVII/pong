@@ -2,6 +2,7 @@ package Game;
 
 import Common.GameConfig.*;
 import Common.GameStateDto;
+import Common.GameStatus;
 import Common.Messages.GameMessage;
 import Common.Tools.Logger;
 import Game.Ui.*;
@@ -66,19 +67,44 @@ public class PongClientApp {
         screenManager.register(new EndingScreen(ScreenName.ENDING, this));
     }
 
+    /**
+     * Initialise le client réseau.
+     * @param host L'adresse du serveur.
+     * @param port Le port du serveur.
+     * @param adminKey La clé d'admin (si hôte).
+     * @param createServer True si ce client doit aussi créer le serveur.
+     * @return true si l'initialisation a réussi, false sinon.
+     */
+    public boolean initializeClient(String host, int port, String adminKey, boolean createServer) {
+        if (this.client != null) {
+            this.client.quit();
+        }
+        try {
+            this.client = Client.getInstance(this, host, port, adminKey, createServer);
+            this.gameState.setGameStatus(GameStatus.CONNECTING); // Mettre à jour l'état local
+            return true;
+        } catch (RuntimeException e) {
+            Logger.log("Échec de l'initialisation du client: " + e.getMessage(), Logger.LogType.ERROR, "CLIENT_APP");
+            this.client = null;
+            this.gameState.setGameStatus(GameStatus.ERROR);
+            this.gameState.setMessage("Erreur: " + e.getMessage());
+            return false;
+        }
+    }
+
     public void switchToScreen(ScreenName screenName) {
         this.screenManager.switchTo(screenName);
         Screen currentScreen = this.screenManager.getCurrentScreen();
         if (currentScreen instanceof GameScreen ) {
             LocalDateTime now = LocalDateTime.now();
 
-            if (this.gameState.StartTargetTime == null) {
+            if (this.gameState.getStartTargetTime() == null) {
                 Logger.log("StartTargetTime est null, lancement direct du jeu.", Logger.LogType.ERROR, "CLIENTAPP");
                 startGameLoop();
                 return;
             }
 
-            long totalMillis = java.time.Duration.between(now, this.gameState.StartTargetTime).toMillis();
+            long totalMillis = java.time.Duration.between(now, this.gameState.getStartTargetTime()).toMillis();
 
             if (totalMillis <= 0) {
                 startGameLoop(); // déjà en retard, on commence directement
@@ -127,12 +153,6 @@ public class PongClientApp {
         }
     }
 
-    private void gameLoopTick() {
-        if (screenManager.getCurrentScreen() instanceof GameScreen) {
-            ((GameScreen) screenManager.getCurrentScreen()).tick();
-        }
-    }
-
     // Callback pour les mises à jour du serveur
     private void handleServerUpdate() {
 
@@ -160,7 +180,7 @@ public class PongClientApp {
                 GameStateDto newState = (GameStateDto) finalMsg1.getData();
 
                 // DEBUG: Log the received state
-                Logger.log("Received GameState - StartTargetTime: " + newState.StartTargetTime, Logger.LogType.DEBUG, "CLIENTAPP");
+                Logger.log("Received GameState - StartTargetTime: " + newState.getStartTargetTime(), Logger.LogType.DEBUG, "CLIENTAPP");
                 Logger.log("Received GameState - Full: " + newState.toString(), Logger.LogType.DEBUG, "CLIENTAPP");
 
                 gameState = newState;
@@ -171,7 +191,7 @@ public class PongClientApp {
 
             if (finalMsg1 != null){
             // Changer d'écran en fonction du nouvel état du jeu
-            switch (finalMsg1.currentStatus) {
+            switch (finalMsg1.getCurrentStatus()) {
                 case WELCOME: // Si le serveur nous remet en Welcome (rare)
                     switchToScreen(TITLE);
                     break;

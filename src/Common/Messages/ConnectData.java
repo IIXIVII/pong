@@ -1,21 +1,22 @@
 package Common.Messages;
 
+import java.io.Serial;
 import java.io.Serializable;
 
+/**
+ * Données spécifiques à la connexion
+ * Contient des informations sur l'hôte et le nombre de joueurs connectés.
+ */
 public class ConnectData implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
-    private String adminKey;
-    private int nbConnected;
+    private final String adminKey;
+    private final int nbConnected;
 
-    // Constructeur
     public ConnectData(String adminKey, int nbConnected) {
         this.adminKey = adminKey;
         this.nbConnected = nbConnected;
-    }
-
-    // Constructeur sans-arg (nécessaire pour certaines bibliothèques de sérialisation)
-    public ConnectData() {
     }
 
     // Getters & Setters
@@ -23,16 +24,8 @@ public class ConnectData implements Serializable {
         return adminKey;
     }
 
-    public void setAdminKey(String adminKey) {
-        this.adminKey = adminKey;
-    }
-
     public int getNbConnected() {
         return nbConnected;
-    }
-
-    public void setNbConnected(int nbConnected) {
-        this.nbConnected = nbConnected;
     }
 
     @Override
