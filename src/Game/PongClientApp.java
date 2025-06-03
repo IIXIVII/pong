@@ -1,3 +1,8 @@
+/**
+ * PongClientApp est la classe principale du client Pong.
+ * Elle initialise l'interface utilisateur, gère la connexion au serveur,
+ * et orchestre la boucle de jeu en fonction des mises à jour du serveur.
+ */
 package Game;
 
 import Common.GameStateDto;
@@ -14,6 +19,7 @@ import Game.Ui.Screens.TitleScreen;
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import static Common.GameConfig.SERVER_TPS;
@@ -22,15 +28,17 @@ import static Game.Ui.ScreenName.*;
 
 
 public class PongClientApp {
-    private JFrame frame;
-    public ScreenManager screenManager;
-    public Client client;
-    public boolean playingState = false;
+    private JFrame frame; //Fenêtre principale de l'application.
+    public ScreenManager screenManager; //Gestionnaire des écrans (UI).
+    public Client client; //Client réseau pour communiquer avec le serveur Pong.
+    public boolean playingState = false; //Indique si le client est actuellement en phase de jeu.
 
-    public GameStateDto gameState = new GameStateDto();
-    private Timer gameLoopTimer;
+    public GameStateDto gameState = new GameStateDto(); //État actuel du jeu reçu du serveur.
+    private Timer gameLoopTimer; //Timer Swing pour la boucle de mise à jour.
 
-
+    /**
+     * Constructeur : initialise la fenêtre, les écrans, et affiche l'écran titre.
+     */
     public PongClientApp() {
         frame = new JFrame("PONG");
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -54,9 +62,13 @@ public class PongClientApp {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
+        // Affiche l'écran titre au démarrage
         this.screenManager.switchTo(TITLE);
     }
 
+    /**
+     * Enregistre tous les écrans (Title, Lobby, Game, Ending) auprès du ScreenManager.
+     */
     private void initializeAllScreens() {
         screenManager.register(new TitleScreen(ScreenName.TITLE, this));
         screenManager.register(new LobbyScreen(ScreenName.LOBBY, this));
@@ -64,61 +76,106 @@ public class PongClientApp {
         screenManager.register(new EndingScreen(ScreenName.ENDING, this));
     }
 
+    /**
+     * Bascule vers un écran donné et délègue la logique spécifique à chaque type d'écran.
+     *
+     * @param screenName nom de l'écran cible.
+     */
     public void switchToScreen(ScreenName screenName) {
-        this.screenManager.switchTo(screenName);
-        Screen currentScreen = this.screenManager.getCurrentScreen();
-        if (currentScreen instanceof GameScreen ) {
-            LocalDateTime now = LocalDateTime.now();
+        screenManager.switchTo(screenName);
+        Screen current = screenManager.getCurrentScreen();
 
-            if (this.gameState.StartTargetTime == null) {
-                Logger.log("StartTargetTime est null, lancement direct du jeu.", Logger.LogType.ERROR, "CLIENTAPP");
-                this.gameState.playing = true;
-                startGameLoop();
-                return;
-            }
-
-            long totalMillis = java.time.Duration.between(now, this.gameState.StartTargetTime).toMillis();
-
-            if (totalMillis <= 0) {
-                startGameLoop(); // déjà en retard, on commence directement
-                Logger.log("1gameState.playing = " + this.gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
-                this.gameState.playing = true;
-                Logger.log("2gameState.playing = " + this.gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
-                return;
-            }
-
-            final int[] countdownSeconds = {(int) (totalMillis / 1000)};  // Convertir millisecondes en secondes
-
-            Logger.log("Début du compte à rebours : " + countdownSeconds[0] + "s", Logger.LogType.INFO, "CLIENTAPP");
-
-            Timer countdownTimer = new Timer(1000, null);
-
-            countdownTimer.addActionListener(e -> {
-                if (countdownSeconds[0] > 0) {
-                    System.out.println("Début dans " + countdownSeconds[0] + "s");
-                    countdownSeconds[0]--;
-                } else {
-                    countdownTimer.stop();
-                    System.out.println("GO !");
-
-                    startGameLoop();
-                }
-            });
-
-            countdownTimer.start();
-            Logger.log("1gameState.playing = " + this.gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
-            this.gameState.playing = true;
-            Logger.log("2gameState.playing = " + this.gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
-
-        } else if (currentScreen instanceof LobbyScreen ) {
-
-            startGameLoop();
-
-        } else {
-            stopGameLoop();
+        if (current instanceof GameScreen) {
+            handleSwitchToGameScreen();
+        }
+        else if (current instanceof LobbyScreen) {
+            handleSwitchToLobbyScreen();
+        }
+        else {
+            handleSwitchToOtherScreens();
         }
     }
 
+    /**
+     * Logique à exécuter quand on passe à l'écran de jeu (GameScreen).
+     * - Si StartTargetTime est null, lance directement la boucle.
+     * - Sinon, calcule le délai jusqu'au début, démarre un compte à rebours si nécessaire.
+     */
+    private void handleSwitchToGameScreen() {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Si StartTargetTime non initialisé → jeu direct
+        if (gameState.StartTargetTime == null) {
+            Logger.log("StartTargetTime est null, lancement direct du jeu.", Logger.LogType.ERROR, "CLIENTAPP");
+            gameState.playing = true;
+            startGameLoop();
+            return;
+        }
+
+        // Délai restant (en millisecondes) jusqu'au StartTargetTime
+        long totalMillis = Duration.between(now, gameState.StartTargetTime).toMillis();
+
+        // Si déjà en retard, démarrer la boucle immédiatement
+        if (totalMillis <= 0) {
+            gameState.playing = true;
+            startGameLoop();
+            Logger.log("1gameState.playing = " + gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
+            Logger.log("2gameState.playing = " + gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
+            return;
+        }
+
+        // Sinon, lancer un compte à rebours avant le début
+        startCountdownAndGameLoop((int) (totalMillis / 1000));
+    }
+
+    /**
+     * Démarre un Timer Swing pour un compte à rebours, puis lance la boucle de jeu.
+     *
+     * @param secondsInitial Nombre de secondes à décompter.
+     */
+    private void startCountdownAndGameLoop(int secondsInitial) {
+        final int[] remaining = { secondsInitial };
+        Logger.log("Début du compte à rebours : " + remaining[0] + "s", Logger.LogType.INFO, "CLIENTAPP");
+
+        Timer countdownTimer = new Timer(1000, null);
+        countdownTimer.addActionListener(e -> {
+            if (remaining[0] > 0) {
+                System.out.println("Début dans " + remaining[0] + "s");
+                remaining[0]--;
+            } else {
+                countdownTimer.stop();
+                System.out.println("GO !");
+                startGameLoop();
+            }
+        });
+        countdownTimer.start();
+
+        // On peut déjà mettre playing=true pour indiquer que la partie va démarrer
+        gameState.playing = true;
+        Logger.log("1gameState.playing = " + gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
+        Logger.log("2gameState.playing = " + gameState.playing, Logger.LogType.INFO, "CLIENTAPP");
+    }
+
+    /**
+     * Logique à exécuter quand on passe à l'écran de lobby (LobbyScreen).
+     * Démarre immédiatement la boucle de jeu pour écouter le serveur.
+     */
+    private void handleSwitchToLobbyScreen() {
+        startGameLoop();
+    }
+
+    /**
+     * Logique à exécuter pour tous les autres écrans (Title, Ending, etc.).
+     * Il suffit d'arrêter la boucle de jeu si elle tourne.
+     */
+    private void handleSwitchToOtherScreens() {
+        stopGameLoop();
+    }
+
+
+    /**
+     * Démarre la boucle de jeu qui interroge le serveur à intervalle fixe (SERVER_TPS).
+     */
     private void startGameLoop() {
         gameLoopTimer = new Timer(SERVER_TPS, e -> handleServerUpdate());
         Logger.log("Client Prepare la loop",Logger.LogType.DEBUG,"CLIENTAPP");
@@ -126,6 +183,9 @@ public class PongClientApp {
         Logger.log("Client execute la loop",Logger.LogType.DEBUG,"CLIENTAPP");
     }
 
+    /**
+     * Arrête la boucle de jeu si elle est active.
+     */
     private void stopGameLoop() {
         if (gameLoopTimer != null) {
             Logger.log("Client arrete la loop",Logger.LogType.DEBUG,"CLIENTAPP");
@@ -134,78 +194,100 @@ public class PongClientApp {
         }
     }
 
+    /**
+     * Effectue un tick de la boucle pour mettre à jour l'écran de jeu.
+     */
     private void gameLoopTick() {
         if (screenManager.getCurrentScreen() instanceof GameScreen) {
             ((GameScreen) screenManager.getCurrentScreen()).tick();
         }
     }
 
-    // Callback pour les mises à jour du serveur
+    /**
+     * Gère les mises à jour reçues du serveur, en trois phases :
+     *  1. récupération et traitement des messages,
+     *  2. mise à jour de l'état de jeu et des écrans,
+     *  3. transition d'écran selon le statut.
+     */
     private void handleServerUpdate() {
+        // 1) Récupérer et traiter tous les messages en attente
+        GameMessage<?> lastMsg = processIncomingMessages();
 
-
-        GameMessage<?> msg = client.pollResponse();
-        GameMessage<?> finalMsg = null;
-
-        while (msg != null) {
-            client.process(msg);
-            finalMsg = msg;
-            msg =  client.pollResponse();
-        }
-
-
-
-
-
-
-
-        GameMessage<?> finalMsg1 = finalMsg;
-        SwingUtilities.invokeLater(() -> { // Mises à jour de l'UI sur le thread EDT
-
-            // Mettre à jour les données de chaque écran
-            if (finalMsg1 != null && finalMsg1.getData() instanceof GameStateDto) {
-                GameStateDto newState = (GameStateDto) finalMsg1.getData();
-
-                // DEBUG: Log the received state
-                //Logger.log("Received GameState - StartTargetTime: " + newState.StartTargetTime, Logger.LogType.DEBUG, "CLIENTAPP");
-                //Logger.log("Received GameState - Full: " + newState.toString(), Logger.LogType.DEBUG, "CLIENTAPP");
-
-                this.gameState = newState;
-                //finalMsg1.log("CLIENTAPP");
-
-                screenManager.updateScreens(gameState);
+        // 2) Mettre à jour l'UI sur le thread EDT
+        SwingUtilities.invokeLater(() -> {
+            if (lastMsg != null) {
+                updateGameStateAndScreens(lastMsg);
+                handleStatusTransition(lastMsg);
             }
-
-            //if (finalMsg1 != null) if (finalMsg1.currentStatus == GameStatus.PLAYING) Logger.log(finalMsg1.getData().toString(), Logger.LogType.INFO, "CLIENTAPPLLLLLLLLLLLLLLL");
-
-            if (finalMsg1 != null){
-                // Changer d'écran en fonction du nouvel état du jeu
-                switch (finalMsg1.currentStatus) {
-                    case WELCOME: // Si le serveur nous remet en Welcome (rare)
-                        switchToScreen(TITLE);
-                        break;
-                    case LOBBY_WAITING:
-                    case LOBBY_READY_TO_START:
-                        switchToScreen(LOBBY);
-                        break;
-                    case PLAYING:
-                        if (!playingState){
-                            playingState= true;
-                            switchToScreen(GAME);
-                        }
-                        break;
-                    case GAME_OVER:
-                        switchToScreen(ENDING);
-                        break;
-                    default:
-                        // Si on est en CONNECTING, on reste sur l'écran actuel (Welcome ou Lobby)
-                        // jusqu'à ce que le serveur confirme un nouvel état.
-                        // Le WelcomeScreen gère l'affichage de "Connecting..."
-                        break;
-                }}
         });
     }
 
+    /**
+     * Parcourt tous les messages en attente, les traite via client.process(...)
+     * et renvoie le dernier message reçu (ou null si aucun message).
+     */
+    private GameMessage<?> processIncomingMessages() {
+        GameMessage<?> msg = client.pollResponse();
+        GameMessage<?> lastMsg = null;
+
+        while (msg != null) {
+            client.process(msg);
+            lastMsg = msg;
+            msg = client.pollResponse();
+        }
+
+        return lastMsg;
+    }
+
+    /**
+     * Si le dernier message contient un GameStateDto, met à jour gameState
+     * et actualise les écrans via screenManager.updateScreens(...).
+     */
+    private void updateGameStateAndScreens(GameMessage<?> lastMsg) {
+        if (lastMsg.getData() instanceof GameStateDto) {
+            GameStateDto newState = (GameStateDto) lastMsg.getData();
+            this.gameState = newState;
+            screenManager.updateScreens(gameState);
+        }
+    }
+
+    /**
+     * Lit le statut du dernier message et bascule vers l'écran approprié.
+     */
+    private void handleStatusTransition(GameMessage<?> lastMsg) {
+        switch (lastMsg.currentStatus) {
+            case WELCOME:
+                switchToScreen(TITLE);
+                break;
+
+            case LOBBY_WAITING:
+            case LOBBY_READY_TO_START:
+                switchToScreen(LOBBY);
+                break;
+
+            case PLAYING:
+                if (!playingState) {
+                    playingState = true;
+                    switchToScreen(GAME);
+                }
+                break;
+
+            case GAME_OVER:
+                switchToScreen(ENDING);
+                break;
+
+            default:
+                // Pour CONNECTING ou autres statuts inconnus : ne rien faire
+                break;
+        }
+    }
+
+
+    /**
+     * Point d'entrée de l'application : démarre l'application sur le thread EDT.
+     *
+     * @param args arguments de la ligne de commande (non utilisés).
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(PongClientApp::new);
     }
