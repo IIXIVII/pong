@@ -6,18 +6,29 @@ import java.awt.Rectangle;
 import java.util.Random;
 
 import static Common.GameConfig.MAX_BALL_SPEED_Y;
-
+/**
+ * Représente la balle
+ * Hérite de MovingGameObject pour gérer le mouvement et les collisions.
+ */
 public class Ball extends MovingGameObject {
     private static final Random RANDOM = new Random();
     private static final double MAX_ANGLE = Math.PI / 4; // 45°
-    public boolean outOfPlay = false; // Marqueur pour suppression
+    private boolean markedForRemoval = false;
 
+    /**
+     * Constructeur de la balle.
+     * @param startX Position X initiale.
+     * @param startY Position Y initiale.
+     */
     public Ball(int startX, int startY) {
         super(startX, startY, GameConfig.BALL_DIAMETER, GameConfig.BALL_DIAMETER, 0, 0);
         resetSpeedAndDirection();
     }
 
-
+    /**
+     * Réinitialise la balle
+     * La balle part dans une direction aléatoire (gauche ou droite) avec un angle aléatoire.
+     */
     public void resetSpeedAndDirection() {
         // Choix d'un quadrant (gauche ou droite)
         double baseAngle = RANDOM.nextBoolean() ? 0 : Math.PI;
@@ -35,6 +46,7 @@ public class Ball extends MovingGameObject {
     public void update() {
         super.move();
 
+        // Gérer les collisions avec les bords supérieur et inférieur de l'écran
         if (y <= 0) {
             y = 0;
             reverseY();
@@ -44,55 +56,48 @@ public class Ball extends MovingGameObject {
         }
     }
 
+    /**
+     * Gère l'impact de la balle avec un paddle.
+     * La vitesse de la balle est influencée par la vitesse du paddle
+     * @param paddle Le paddle avec lequel la balle est entrée en collision.
+     */
     public void handlePaddleImpact(Paddle paddle) {
-        Rectangle paddleBounds = paddle.getBounds();
-
-        // Inversion direction horizontale
         reverseX();
-
         // Ajout de momentum en fonction de la vitesse du paddle
-        float paddleVelocityY = paddle.getCurrentSpeedY();
-        dy += (int) (paddleVelocityY * GameConfig.PADDLE_SPEED_TO_BALL_DY_FACTOR);
-
+        dy += (int) (paddle.getCurrentSpeedY() * GameConfig.PADDLE_SPEED_TO_BALL_DY_FACTOR);
         // Limiter la vitesse verticale max pour éviter les rebonds trop rapides
-        this.dy = Math.max(-MAX_BALL_SPEED_Y, Math.min(this.dy, MAX_BALL_SPEED_Y));
+        this.dy = Math.max(-GameConfig.MAX_BALL_SPEED_Y, Math.min(this.dy, GameConfig.MAX_BALL_SPEED_Y));
 
-        // Positionner la balle juste en dehors du paddle pour éviter les collisions persistantes
-        if (dx > 0) {
-            x = paddleBounds.x + paddleBounds.width + 1;
-        } else {
-            x = paddleBounds.x - this.width - 1;
-        }
+        // Repositionnement de la balle juste en dehors du paddle pour éviter les collisions persistantes
+        if (dx > 0) x = paddle.getX() + paddle.getWidth() + 1;
+        else x = paddle.getX() - this.width - 1;
     }
 
+    /**
+     * Gère l'impact de la balle avec un obstacle.
+     * @param obstacle L'obstacle avec lequel la balle est entrée en collision.
+     */
     public void handleObstacleImpact(GameObject obstacle) {
         Rectangle ballBounds = getBounds();
         Rectangle obstacleBounds = obstacle.getBounds();
+        Rectangle intersection = ballBounds.intersection(obstacleBounds);
 
-        // Rebond horizontal ou vertical
-        if (ballBounds.intersects(obstacleBounds)) {
-            if (ballBounds.x < obstacleBounds.x || ballBounds.x + ballBounds.width > obstacleBounds.x + obstacleBounds.width) {
-                reverseX();
-            } else {
-                reverseY();
-            }
+        if (intersection.isEmpty()) return;
 
-            // Repositionner la balle pour la sortir de l'obstacle
-            int stepX = (dx != 0) ? dx / Math.abs(dx) : 0;
-            int stepY = (dy != 0) ? dy / Math.abs(dy) : 0;
+        // Collision verticale (dessus/dessous)
+        if (intersection.width >= intersection.height) {
+            reverseY();
+            // Repositionnement de la balle pour éviter les collisions persistantes
+            y = (ballBounds.getCenterY() < obstacleBounds.getCenterY()) ? obstacleBounds.y - height -1 : obstacleBounds.y + obstacleBounds.height +1;
 
-            // Pour éviter une boucle infinie si dx et dy sont tous deux 0
-            if (stepX == 0 && stepY == 0) {
-                // Fallback: pousse la balle légèrement à droite
-                stepX = 1;
-            }
-
-            while (getBounds().intersects(obstacleBounds)) {
-                x += stepX;
-                y += stepY;
-            }
+        // Collision horizontale (gauche/droite)
+        } else {
+            reverseX();
+            // Repositionnement de la balle pour éviter les collisions persistantes
+            x = (ballBounds.getCenterX() < obstacleBounds.getCenterX()) ? obstacleBounds.x - width -1 : obstacleBounds.x + obstacleBounds.width +1;
         }
     }
 
-
+    public void markForRemoval() { this.markedForRemoval = true; }
+    public boolean isMarkedForRemoval() { return markedForRemoval; }
 }

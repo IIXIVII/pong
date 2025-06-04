@@ -6,6 +6,7 @@
 package Game;
 
 import Common.GameStateDto;
+import Common.GameStatus;
 import Common.Messages.GameMessage;
 import Common.Tools.Logger;
 import Game.Ui.Screen;
@@ -77,6 +78,56 @@ public class PongClientApp {
     }
 
     /**
+     * Initialise le client réseau.
+     * @param host L'adresse du serveur.
+     * @param port Le port du serveur.
+     * @param adminKey La clé d'admin (si hôte).
+     * @param createServer True si ce client doit aussi créer le serveur.
+     * @return true si l'initialisation a réussi, false sinon.
+     */
+    public boolean initializeClient(String host, int port, String adminKey, boolean createServer) {
+        if (this.client != null) {
+            this.client.quit();
+        }
+        try {
+            this.client = Client.getInstance(this, host, port, adminKey, createServer);
+            this.gameState.setGameStatus(GameStatus.CONNECTING); // Mettre à jour l'état local
+            return true;
+        } catch (RuntimeException e) {
+            Logger.log("Échec de l'initialisation du client: " + e.getMessage(), Logger.LogType.ERROR, "CLIENT_APP");
+            this.client = null;
+            this.gameState.setGameStatus(GameStatus.ERROR);
+            this.gameState.setMessage("Erreur: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Initialise le client réseau.
+     * @param host L'adresse du serveur.
+     * @param port Le port du serveur.
+     * @param adminKey La clé d'admin (si hôte).
+     * @param createServer True si ce client doit aussi créer le serveur.
+     * @return true si l'initialisation a réussi, false sinon.
+     */
+    public boolean initializeClient(String host, int port, String adminKey, boolean createServer) {
+        if (this.client != null) {
+            this.client.quit();
+        }
+        try {
+            this.client = Client.getInstance(this, host, port, adminKey, createServer);
+            this.gameState.setGameStatus(GameStatus.CONNECTING); // Mettre à jour l'état local
+            return true;
+        } catch (RuntimeException e) {
+            Logger.log("Échec de l'initialisation du client: " + e.getMessage(), Logger.LogType.ERROR, "CLIENT_APP");
+            this.client = null;
+            this.gameState.setGameStatus(GameStatus.ERROR);
+            this.gameState.setMessage("Erreur: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Bascule vers un écran donné et délègue la logique spécifique à chaque type d'écran.
      *
      * @param screenName nom de l'écran cible.
@@ -105,15 +156,14 @@ public class PongClientApp {
         LocalDateTime now = LocalDateTime.now();
 
         // Si StartTargetTime non initialisé → jeu direct
-        if (gameState.StartTargetTime == null) {
+        if (gameState.getStartTargetTime() == null) {
             Logger.log("StartTargetTime est null, lancement direct du jeu.", Logger.LogType.ERROR, "CLIENTAPP");
             gameState.playing = true;
             startGameLoop();
             return;
         }
 
-        // Délai restant (en millisecondes) jusqu'au StartTargetTime
-        long totalMillis = Duration.between(now, gameState.StartTargetTime).toMillis();
+            long totalMillis = java.time.Duration.between(now, this.gameState.StartTargetTime).toMillis();
 
         // Si déjà en retard, démarrer la boucle immédiatement
         if (totalMillis <= 0) {
