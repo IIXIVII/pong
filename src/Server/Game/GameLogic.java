@@ -12,8 +12,10 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+
+import static Common.GameConfig.*;
+import static Common.GameStatus.*;
 
 /**
  * Gère la logique principale du jeu Pong côté serveur.

@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Data Transfer Object (DTO) représentant l'état complet du jeu à un instant T.
@@ -25,9 +24,10 @@ public class GameStateDto implements Serializable {
     public int connectedPlayers;
 
     public String message; // Pour afficher des infos (e.g., "Waiting for Player 2", "Player 1 Wins!")
-    public LocalDateTime StartTargetTime;// Compte-à-rebours pour synchroniser les joueurs au lancement du jeu
+    public LocalDateTime startTargetTime;// Compte-à-rebours pour synchroniser les joueurs au lancement du jeu
 
     public GameStatus gameStatus;
+    public boolean playing;
 
     private List<BallPosition> balls;
     private List<ObstaclePosition> obstacles;
@@ -97,10 +97,25 @@ public class GameStateDto implements Serializable {
                 ", scorePlayer2=" + scorePlayer2 +
                 ", connectedPlayers=" + connectedPlayers +
                 ", message='" + message + '\'' +
-                ", StartTargetTime=" + StartTargetTime +
+                ", StartTargetTime=" + startTargetTime +
                 ", gameStatus=" + gameStatus +
                 ", balls=" + balls +
                 ", obstacles=" + obstacles +
                 '}';
     }
+
+    /**
+     * Position d'une balle (immutable).
+     */
+    public record BallPosition(int x, int y) implements Serializable {
+        @Serial private static final long serialVersionUID = 2L;
+    }
+
+    /**
+     * Position d'un obstacle (immutable).
+     */
+    public record ObstaclePosition(int x, int y) implements Serializable {
+        @Serial private static final long serialVersionUID = 3L;
+    }
+
 }

@@ -1,8 +1,6 @@
 package Game.Ui.Screens;
 
 import Common.GameConfig;
-import Common.Tools.Logger;
-import Game.Client;
 import Game.PongClientApp;
 import Game.Ui.BaseScreen;
 import Game.Ui.ScreenName;
@@ -69,6 +67,7 @@ public class TitleScreen extends BaseScreen {
         boolean success = app.initializeClient(GameConfig.DEFAULT_SERVER_HOST, GameConfig.DEFAULT_SERVER_PORT, "SUPER_SECRET_ADMIN_KEY", true);
         if (success) {
             app.switchToScreen(ScreenName.LOBBY);
+
         } else {
             // Afficher un message d'erreur à l'utilisateur si la connexion/création échoue
             JOptionPane.showMessageDialog(this, "Impossible de démarrer le serveur ou de se connecter.", "Erreur Hôte", JOptionPane.ERROR_MESSAGE);

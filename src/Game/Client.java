@@ -110,9 +110,8 @@ public class Client implements Runnable {
             GameMessage<ConnectData> resp = (GameMessage<ConnectData>) in.readObject();
             this.id = resp.getId(); // Récupère l'identifiant attribué par le serveur
             this.host = resp.getData().getAdminKey().equals(adminKey) && resp.getData().getAdminKey().length() != 0; // Vérifie si la clé d'administration est valide
-            Logger.log("Connecté avec ID=" + id + " nbConnected=" + resp.getData().getNbConnected(),
-                    Logger.LogType.INFO, "CLIENT");
-            app.gameState.gameStatus = resp.currentStatus;
+            Logger.log("Connecté avec ID=" + id + " nbConnected=" + resp.getData().getNbConnected(),Logger.LogType.INFO, "CLIENT");
+            app.gameState.gameStatus = resp.getCurrentStatus();
             app.gameState.connectedPlayers = resp.getData().getNbConnected();
 
         } catch (ClassNotFoundException e) {
@@ -152,7 +151,7 @@ public class Client implements Runnable {
                 Logger.log("passage au lobby",Logger.LogType.INFO,"CLIENT");
                 break;
             case INFO_SERVER:
-                Logger.log("ok",Logger.LogType.SUCCESS,"oihioh");
+                Logger.log("info du server",Logger.LogType.SUCCESS,"CLIENT");
                 break;
 
 

@@ -20,7 +20,6 @@ import Game.Ui.Screens.TitleScreen;
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 import static Common.GameConfig.SERVER_TPS;
@@ -36,6 +35,7 @@ public class PongClientApp {
 
     public GameStateDto gameState = new GameStateDto(); //État actuel du jeu reçu du serveur.
     private Timer gameLoopTimer; //Timer Swing pour la boucle de mise à jour.
+
 
     /**
      * Constructeur : initialise la fenêtre, les écrans, et affiche l'écran titre.
@@ -86,36 +86,12 @@ public class PongClientApp {
      * @return true si l'initialisation a réussi, false sinon.
      */
     public boolean initializeClient(String host, int port, String adminKey, boolean createServer) {
+        String newHost = host;
         if (this.client != null) {
             this.client.quit();
         }
         try {
-            this.client = Client.getInstance(this, host, port, adminKey, createServer);
-            this.gameState.setGameStatus(GameStatus.CONNECTING); // Mettre à jour l'état local
-            return true;
-        } catch (RuntimeException e) {
-            Logger.log("Échec de l'initialisation du client: " + e.getMessage(), Logger.LogType.ERROR, "CLIENT_APP");
-            this.client = null;
-            this.gameState.setGameStatus(GameStatus.ERROR);
-            this.gameState.setMessage("Erreur: " + e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Initialise le client réseau.
-     * @param host L'adresse du serveur.
-     * @param port Le port du serveur.
-     * @param adminKey La clé d'admin (si hôte).
-     * @param createServer True si ce client doit aussi créer le serveur.
-     * @return true si l'initialisation a réussi, false sinon.
-     */
-    public boolean initializeClient(String host, int port, String adminKey, boolean createServer) {
-        if (this.client != null) {
-            this.client.quit();
-        }
-        try {
-            this.client = Client.getInstance(this, host, port, adminKey, createServer);
+            this.client = Client.getInstance(this, newHost, port, adminKey, createServer);
             this.gameState.setGameStatus(GameStatus.CONNECTING); // Mettre à jour l'état local
             return true;
         } catch (RuntimeException e) {
@@ -133,6 +109,7 @@ public class PongClientApp {
      * @param screenName nom de l'écran cible.
      */
     public void switchToScreen(ScreenName screenName) {
+        screenManager.updateScreens(this.gameState);
         screenManager.switchTo(screenName);
         Screen current = screenManager.getCurrentScreen();
 
@@ -163,7 +140,7 @@ public class PongClientApp {
             return;
         }
 
-            long totalMillis = java.time.Duration.between(now, this.gameState.StartTargetTime).toMillis();
+            long totalMillis = java.time.Duration.between(now, this.gameState.getStartTargetTime()).toMillis();
 
         // Si déjà en retard, démarrer la boucle immédiatement
         if (totalMillis <= 0) {
@@ -244,14 +221,6 @@ public class PongClientApp {
         }
     }
 
-    /**
-     * Effectue un tick de la boucle pour mettre à jour l'écran de jeu.
-     */
-    private void gameLoopTick() {
-        if (screenManager.getCurrentScreen() instanceof GameScreen) {
-            ((GameScreen) screenManager.getCurrentScreen()).tick();
-        }
-    }
 
     /**
      * Gère les mises à jour reçues du serveur, en trois phases :
@@ -305,7 +274,7 @@ public class PongClientApp {
      * Lit le statut du dernier message et bascule vers l'écran approprié.
      */
     private void handleStatusTransition(GameMessage<?> lastMsg) {
-        switch (lastMsg.currentStatus) {
+        switch (lastMsg.getCurrentStatus()) {
             case WELCOME:
                 switchToScreen(TITLE);
                 break;
