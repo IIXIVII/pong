@@ -98,7 +98,7 @@ public class LobbyScreen extends BaseScreen {
         // Nombre de joueurs
         int playersConnected = newState.getConnectedPlayers();
         playersLabel.setText("PLAYERS: " + playersConnected + "/2");
-        if (app.client.getHost()) {
+        if (app.client.getHost() && playersConnected == 2) {
             startGameButton.setEnabled(true);
         }
         // Statut d'attente
