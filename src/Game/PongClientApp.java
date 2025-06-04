@@ -18,6 +18,7 @@ import Game.Ui.Screens.LobbyScreen;
 import Game.Ui.Screens.TitleScreen;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.time.LocalDateTime;
@@ -61,6 +62,9 @@ public class PongClientApp {
         frame.setResizable(false);
         frame.pack();
         frame.setLocationRelativeTo(null);
+
+        frame.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/asset/logo.png")));
+
         frame.setVisible(true);
 
         // Affiche l'écran titre au démarrage

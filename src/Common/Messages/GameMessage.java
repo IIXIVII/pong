@@ -58,12 +58,12 @@ public class GameMessage<T extends Serializable> implements Serializable {
 
             Logger.log(
                     "message :" +
-                            String.format("ID: %d | CMD: %s | MSG: %s | Specifics: %s",
-                                    this.id,
-                                    this.cmd,
-                                    messageString,
-                                    dataString
-                            ),
+                                    String.format("ID: %d | CMD: %s | MSG: %s | Specifics: %s",
+                                            this.id,
+                                            this.cmd,
+                                            messageString,
+                                            dataString
+                                    ),
                     Logger.LogType.DEBUG,
                     header);
         }

@@ -125,7 +125,7 @@ public class Client implements Runnable {
             while (running) {
                 @SuppressWarnings("unchecked")
                 GameMessage<?> msg = (GameMessage<?>) in.readObject(); // Lecture du message reçu du serveur
-                Logger.log("Message reçu: " + msg.getCmd(), Logger.LogType.DEBUG, "CLIENT");
+                //Logger.log("Message reçu: " + msg.getCmd(), Logger.LogType.DEBUG, "CLIENT");
                 responses.offer(msg); // Ajoute le message à la file d'attente de réponses
             }
         } catch (IOException | ClassNotFoundException e) {

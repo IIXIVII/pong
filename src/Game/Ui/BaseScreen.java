@@ -28,6 +28,8 @@ public abstract class BaseScreen extends JPanel implements Screen{
         setFocusable(true); // Permet à l'écran de recevoir les événements clavier
         this.state = new GameStateDto();
         setBackground(UiStyle.BACKGROUND_COLOR);
+
+
     }
 
     @Override public ScreenName getScreenName() {return screenName;};

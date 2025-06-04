@@ -253,7 +253,7 @@ public class GameLogic implements Runnable{
         // Envoyer l'état mis à jour à tous les clients
         server.broadcast(message);
 
-        Logger.log("Update game", Logger.LogType.INFO, "Game");
+        //Logger.log("Update game", Logger.LogType.INFO, "Game");
     }
 
     /**
