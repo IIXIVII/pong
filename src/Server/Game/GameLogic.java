@@ -175,7 +175,7 @@ public class GameLogic implements Runnable{
      */
     public void actionPlayer(PlayerInput input) {
         if (input == null) return;
-        Paddle paddleToMove = (input.playerId == 1) ? player1Paddle : player2Paddle;
+        Paddle paddleToMove = (input.playerId == 0) ? player1Paddle : player2Paddle;
         paddleToMove.handlePlayerAction(input.type);
     }
 
@@ -218,10 +218,10 @@ public class GameLogic implements Runnable{
 
             // Point marqué
             if (ball.getX() <= 0) {
-                gameState.setScorePlayer1(gameState.getScorePlayer1() + 1);
+                gameState.setScorePlayer2(gameState.getScorePlayer2() + 1);
                 ball.markForRemoval();
             } else if (ball.getX() + ball.getWidth() >= SCREEN_WIDTH) {
-                gameState.setScorePlayer2(gameState.getScorePlayer2() + 1);
+                gameState.setScorePlayer1(gameState.getScorePlayer1() + 1);
                 ball.markForRemoval();
             }
             if (ball.isMarkedForRemoval()) ballsToRemove.add(ball);
