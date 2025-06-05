@@ -5,7 +5,6 @@
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/lib" />
-        <option name="gradleJvm" value="openjdk-23" />
       </GradleProjectSettings>
     </option>
   </component>
