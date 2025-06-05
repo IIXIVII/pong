@@ -230,8 +230,7 @@ public class GameLogic implements Runnable{
 
         // Si toutes les balles sont hors jeu et que la partie n'est pas finie, en ajouter une nouvelle
         if (balls.isEmpty() && gameState.getScorePlayer1() < WINNING_SCORE && gameState.getScorePlayer2() < WINNING_SCORE) {
-            addInitialBall(); // Add one at center
-            Logger.log("All balls out, adding new initial ball.", Logger.LogType.INFO, "GAMELOGIC");
+            addInitialBall();
         } else {
             // Spawn de balle basé sur un timer
             spawnNewBall();
@@ -252,8 +251,6 @@ public class GameLogic implements Runnable{
 
         // Envoyer l'état mis à jour à tous les clients
         server.broadcast(message);
-
-        //Logger.log("Update game", Logger.LogType.INFO, "Game");
     }
 
     /**

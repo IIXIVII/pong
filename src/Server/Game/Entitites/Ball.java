@@ -29,7 +29,7 @@ public class Ball extends MovingGameObject {
      * Réinitialise la balle
      * La balle part dans une direction aléatoire (gauche ou droite) avec un angle aléatoire.
      */
-    public void resetSpeedAndDirection() {
+    private void resetSpeedAndDirection() {
         // Choix d'un quadrant (gauche ou droite)
         double baseAngle = RANDOM.nextBoolean() ? 0 : Math.PI;
         // Angle entre -45° et +45°

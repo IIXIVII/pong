@@ -22,11 +22,6 @@ public class MovingGameObject extends GameObject {
         this.dy = dy;
     }
 
-    public int getDx() { return dx; }
-    public int getDy() { return dy; }
-    public void setDx(int dx) { this.dx = dx; }
-    public void setDy(int dy) { this.dy = dy; }
-
     /**
      * Déplace l'objet en fonction de ses vitesses dx et dy.
      */
